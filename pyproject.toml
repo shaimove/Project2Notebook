@@ -1,0 +1,37 @@
+[project]
+name = "project2notebook"
+version = "0.1.0"
+description = "Agentic ML engineering system that turns a project brief + datasets into a reproducible Jupyter notebook."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "pydantic>=2.5",
+    "python-dotenv>=1.0",
+    "python-multipart>=0.0.9",
+    "pypdf>=4.0",
+    "pandas>=1.4",
+    "numpy>=1.21",
+    "scikit-learn>=1.0",
+    "matplotlib>=3.5",
+    "nbformat>=5.5",
+    "nbconvert>=7.0",
+]
+
+[project.optional-dependencies]
+boosting = ["xgboost>=2.0"]
+mcp = ["mcp>=1.0"]
+graph = ["langgraph>=0.2"]
+dev = ["pytest>=7.0", "ruff>=0.4"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.setuptools]
+packages = ["backend", "mcp_servers"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"

@@ -1,0 +1,30 @@
+# Core backend
+fastapi>=0.110
+uvicorn[standard]>=0.27
+pydantic>=2.5
+python-dotenv>=1.0
+python-multipart>=0.0.9
+
+# Document parsing
+pypdf>=4.0
+
+# Data / ML
+pandas>=1.4
+numpy>=1.21
+scikit-learn>=1.0
+matplotlib>=3.5
+
+# Notebook generation
+nbformat>=5.5
+nbconvert>=7.0
+
+# Optional gradient boosting (used if available, otherwise sklearn HistGradientBoosting)
+xgboost>=2.0
+
+# Optional: LangGraph (the in-repo orchestrator is used by default and can be
+# swapped for LangGraph). Uncomment if you want to wire it in.
+# langgraph>=0.2
+
+# Optional: official MCP Python SDK. The in-process MCP client/registry is used
+# by default; install this to run the servers over real MCP stdio transport.
+# mcp>=1.0

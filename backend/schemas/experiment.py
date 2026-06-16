@@ -1,0 +1,68 @@
+"""Schemas for preprocessing, modeling and the iteration loop."""
+from __future__ import annotations
+
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
+
+
+class PreprocessingPlan(BaseModel):
+    drop_columns: List[str] = Field(default_factory=list)
+    keep_columns: List[str] = Field(default_factory=list)
+    feature_engineering: List[str] = Field(default_factory=list)
+    numeric_columns: List[str] = Field(default_factory=list)
+    categorical_columns: List[str] = Field(default_factory=list)
+    missing_value_strategy: Dict[str, str] = Field(default_factory=dict)
+    encoding_strategy: str = "one_hot"
+    scaling_strategy: str = "standard"
+    aggregation: str = ""
+    leakage_mitigations: List[str] = Field(default_factory=list)
+    lag_features: List[str] = Field(default_factory=list)
+    notes: List[str] = Field(default_factory=list)
+
+
+class SplitReport(BaseModel):
+    strategy: str = "random"
+    train_rows: int = 0
+    valid_rows: int = 0
+    test_rows: int = 0
+    group_column: Optional[str] = None
+    time_column: Optional[str] = None
+    stratified: bool = False
+    rationale: str = ""
+
+
+class ModelResult(BaseModel):
+    model_name: str
+    family: str
+    train_metrics: Dict[str, float] = Field(default_factory=dict)
+    valid_metrics: Dict[str, float] = Field(default_factory=dict)
+    primary_metric: str = ""
+    train_valid_gap: Optional[float] = None
+    runtime_seconds: Optional[float] = None
+    notes: List[str] = Field(default_factory=list)
+
+
+class IterationReport(BaseModel):
+    iteration: int
+    hypothesis: str = ""
+    motivation: str = ""
+    change_description: str = ""
+    model_name: str = ""
+    valid_score: Optional[float] = None
+    previous_best: Optional[float] = None
+    relative_improvement: Optional[float] = None
+    accepted: bool = False
+    decision_reason: str = ""
+    train_valid_gap: Optional[float] = None
+    metrics: Dict[str, float] = Field(default_factory=dict)
+
+
+class FinalTestReport(BaseModel):
+    final_model: str = ""
+    test_metrics: Dict[str, float] = Field(default_factory=dict)
+    valid_metrics: Dict[str, float] = Field(default_factory=dict)
+    goal_met: Optional[bool] = None
+    generalization_notes: List[str] = Field(default_factory=list)
+    limitations: List[str] = Field(default_factory=list)
+    future_directions: List[str] = Field(default_factory=list)

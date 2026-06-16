@@ -1,0 +1,143 @@
+"""Data Audit Agent.
+
+Profiles the dataset and compares it against the project understanding. Writes
+``data_audit_report.json``.
+"""
+from __future__ import annotations
+
+from typing import Any, Dict, List
+
+from backend.agents.state import DataScientist
+from backend.mcp_client.client import MCPClient
+from backend.schemas.data_audit import ColumnProfile, DataAuditReport
+from backend.services import artifact_store, memory
+
+DI = "data-inspection-tools"
+
+
+def run(state: DataScientist, client: MCPClient) -> DataScientist:
+    csv_path = (state.get("csv_paths") or [None])[0]
+    spec = state.get("project_spec") or {}
+    targets = spec.get("targets") or []
+    target = targets[0] if targets else None
+
+    profile = client.call_tool(DI, "profile_dataset", {"csv_path": csv_path})
+    missing = client.call_tool(DI, "summarize_missing_values", {"csv_path": csv_path})
+    invalid = client.call_tool(DI, "detect_invalid_values", {"csv_path": csv_path})
+    dups = client.call_tool(DI, "detect_duplicates", {"csv_path": csv_path})
+    time_cols = client.call_tool(DI, "detect_time_columns", {"csv_path": csv_path}).get("time_columns", [])
+    entity = client.call_tool(DI, "detect_entity_columns", {"csv_path": csv_path})
+
+    columns: List[ColumnProfile] = []
+    high_card: List[str] = []
+    constant: List[str] = []
+    for col in profile.get("columns", []):
+        role = _infer_role(col, target, time_cols, entity)
+        columns.append(ColumnProfile(**{**col, "inferred_role": role}))
+        if col.get("is_constant"):
+            constant.append(col["name"])
+        if (col.get("cardinality") or 0) > 50:
+            high_card.append(col["name"])
+
+    target_dist: Dict[str, Any] = {}
+    class_imbalance = None
+    if target:
+        target_dist = client.call_tool(DI, "inspect_target_distribution", {"csv_path": csv_path, "target": target})
+        class_imbalance = target_dist.get("imbalance_ratio")
+
+    leakage_prone = _leakage_prone_columns(profile, spec)
+
+    report = DataAuditReport(
+        n_rows=profile.get("n_rows", 0),
+        n_cols=profile.get("n_cols", 0),
+        columns=columns,
+        n_duplicate_rows=dups.get("n_duplicate_rows", 0),
+        target=target,
+        target_distribution=target_dist,
+        class_imbalance=class_imbalance,
+        time_columns=time_cols,
+        entity_columns=entity.get("entity_columns", []),
+        leakage_prone_columns=leakage_prone,
+        near_empty_columns=missing.get("near_empty_columns", []),
+        constant_columns=constant,
+        high_cardinality_columns=high_card,
+        description_vs_data_mismatches=[],
+        notes=_notes(invalid, dups, class_imbalance),
+    )
+    d = report.model_dump()
+    pid = state["project_id"]
+    # Read prior memory before recording findings (artifact-memory design).
+    _ = memory.load(pid)
+    artifact_store.write_json(pid, "data_audit_report.json", d)
+    artifact_store.write_text(pid, "data_audit.md", _render_md(d))
+    state["data_audit_report"] = d
+
+    findings = list(d.get("notes", []))
+    if d.get("leakage_prone_columns"):
+        findings.append("Leakage-prone columns: " + ", ".join(d["leakage_prone_columns"]))
+    memory.update(
+        pid,
+        phase="Data Audit",
+        data_quality_findings=findings,
+        leakage_risks=[f"column '{c}' may carry future/outcome info" for c in d.get("leakage_prone_columns", [])],
+    )
+    return state
+
+
+def _render_md(d: dict) -> str:
+    def bullets(items):
+        return "\n".join(f"- {i}" for i in (items or [])) or "- (none)"
+
+    return "\n".join([
+        "# Data Audit",
+        "",
+        f"- **Shape:** {d.get('n_rows')} rows × {d.get('n_cols')} cols",
+        f"- **Duplicate rows:** {d.get('n_duplicate_rows')}",
+        f"- **Target:** {d.get('target')}",
+        f"- **Class imbalance ratio:** {d.get('class_imbalance')}",
+        f"- **Time columns:** {', '.join(d.get('time_columns', [])) or '(none)'}",
+        f"- **Entity/ID columns:** {', '.join(d.get('entity_columns', [])) or '(none)'}",
+        f"- **Near-empty columns:** {', '.join(d.get('near_empty_columns', [])) or '(none)'}",
+        f"- **Constant columns:** {', '.join(d.get('constant_columns', [])) or '(none)'}",
+        f"- **High-cardinality columns:** {', '.join(d.get('high_cardinality_columns', [])) or '(none)'}",
+        "",
+        "## Leakage-prone columns",
+        bullets(d.get("leakage_prone_columns")),
+        "",
+        "## Notes",
+        bullets(d.get("notes")),
+    ])
+
+
+def _infer_role(col: Dict[str, Any], target, time_cols, entity) -> str:
+    name = col["name"]
+    if target and name == target:
+        return "target"
+    if name in (time_cols or []):
+        return "time"
+    if name in (entity.get("entity_columns", []) or []) or name in (entity.get("unique_id_like", []) or []):
+        return "id"
+    if col.get("is_constant"):
+        return "drop"
+    return "feature"
+
+
+def _leakage_prone_columns(profile: Dict[str, Any], spec: Dict[str, Any]) -> List[str]:
+    risky: List[str] = []
+    for col in profile.get("columns", []):
+        c = col["name"].lower()
+        if any(t in c for t in ("future", "next", "post_", "_after", "outcome")):
+            risky.append(col["name"])
+    return risky
+
+
+def _notes(invalid, dups, imbalance) -> List[str]:
+    notes: List[str] = []
+    if dups.get("n_duplicate_rows"):
+        notes.append(f"{dups['n_duplicate_rows']} duplicate rows detected.")
+    issues = invalid.get("invalid_value_issues", {})
+    if issues:
+        notes.append(f"Invalid-value issues in: {', '.join(issues.keys())}.")
+    if imbalance and imbalance > 1.5:
+        notes.append(f"Target appears imbalanced (ratio ~{imbalance}).")
+    return notes

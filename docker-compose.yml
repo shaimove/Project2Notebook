@@ -1,0 +1,37 @@
+# Convenience compose file for running the backend and frontend together.
+# The backend image installs Python deps; the web image runs the Next.js dev server.
+# For the MVP you can also just run both processes locally (see README).
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    image: project2notebook-backend
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-5.4-mini}
+      - ENABLE_WEB_SEARCH=${ENABLE_WEB_SEARCH:-false}
+      - MAX_ITERATIONS=${MAX_ITERATIONS:-3}
+      - MIN_RELATIVE_IMPROVEMENT=${MIN_RELATIVE_IMPROVEMENT:-0.05}
+      - BACKEND_HOST=0.0.0.0
+      - BACKEND_PORT=8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/storage:/app/backend/storage
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: ../../docker/web.Dockerfile
+    image: project2notebook-web
+    environment:
+      - NEXT_PUBLIC_API_BASE=http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    command: npm run dev
