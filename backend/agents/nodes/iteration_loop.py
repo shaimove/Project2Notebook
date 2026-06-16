@@ -18,7 +18,14 @@ from typing import Any, Dict, List, Optional
 from backend.agents import code_authoring
 from backend.agents.state import DataScientist
 from backend.mcp_client.client import MCPClient
-from backend.schemas.experiment import IterationReport
+from backend.mcp_client.tool_result import optional_tool_result
+from backend.schemas.experiment import (
+    IterationReport,
+    IterationStopDecision,
+    IterationSuggestion,
+    ModelResult,
+)
+from backend.schemas.validation import try_validate_model, validate_model
 from backend.services import artifact_store, memory
 from mcp_servers._mlcommon import prepared_dir
 
@@ -73,30 +80,69 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
     stop_reason = ""
 
     for i in range(1, max_iter + 1):
-        suggestion = client.call_tool(EX, "suggest_next_iteration", {
-            "spec": spec, "prior_art": prior_art, "data_audit": audit,
-            "best_result": {"model": best_model, "score": best_score}, "iteration": i,
-        })
-        if not suggestion.get("supported", False) or suggestion.get("action") == "stop":
+        suggestion = validate_model(
+            IterationSuggestion,
+            client.call_tool(EX, "suggest_next_iteration", {
+                "spec": spec, "prior_art": prior_art, "data_audit": audit,
+                "best_result": {"model": best_model, "score": best_score}, "iteration": i,
+            }),
+            context="iteration suggestion",
+        )
+        if not suggestion.supported or suggestion.action == "stop":
             stop_reason = "No further EDA/prior-art-supported change available."
             break
 
-        model_name = suggestion.get("model_name", "boosting")
+        model_name = suggestion.model_name
         tool = _TOOL_FOR.get(model_name, "train_boosting_model")
         result = client.call_tool(MD, tool, {
-            "project_id": project_id, "spec": spec, "params": suggestion.get("params", {}),
+            "project_id": project_id, "spec": spec, "params": suggestion.params,
         })
-        new_score = result.get("valid_score")
-        gap = result.get("train_valid_gap")
+        if not optional_tool_result(result, tool=tool, server=MD):
+            reports.append(IterationReport(
+                iteration=i,
+                hypothesis=suggestion.hypothesis,
+                motivation=suggestion.motivation,
+                change_description=f"Trained {model_name} with params {suggestion.params}.",
+                model_name=model_name,
+                valid_score=None,
+                previous_best=best_score,
+                relative_improvement=None,
+                accepted=False,
+                decision_reason="Rejected: model training failed.",
+                train_valid_gap=None,
+                metrics={},
+            ).model_dump())
+            continue
+
+        train_result = try_validate_model(ModelResult, result, context=f"iteration {i} training")
+        if train_result is None:
+            reports.append(IterationReport(
+                iteration=i,
+                hypothesis=suggestion.hypothesis,
+                motivation=suggestion.motivation,
+                change_description=f"Trained {model_name} with params {suggestion.params}.",
+                model_name=model_name,
+                valid_score=None,
+                previous_best=best_score,
+                relative_improvement=None,
+                accepted=False,
+                decision_reason="Rejected: invalid model output.",
+                train_valid_gap=None,
+                metrics={},
+            ).model_dump())
+            continue
+
+        new_score = train_result.valid_score
+        gap = train_result.train_valid_gap
         overfit = bool(gap is not None and abs(gap) > 0.2)
         rel = _relative_improvement(new_score, best_score, higher) if best_score is not None else 1.0
         accepted = (rel > min_rel) and (not overfit)
 
         report = IterationReport(
             iteration=i,
-            hypothesis=suggestion.get("hypothesis", ""),
-            motivation=suggestion.get("motivation", ""),
-            change_description=f"Trained {model_name} with params {suggestion.get('params', {})}.",
+            hypothesis=suggestion.hypothesis,
+            motivation=suggestion.motivation,
+            change_description=f"Trained {model_name} with params {suggestion.params}.",
             model_name=model_name,
             valid_score=new_score,
             previous_best=best_score,
@@ -106,14 +152,13 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
                              else ("Rejected: suspected overfitting." if overfit
                                    else f"Rejected: improvement {rel:.1%} <= {min_rel:.0%}.")),
             train_valid_gap=gap,
-            metrics=result.get("valid_metrics", {}),
+            metrics=train_result.valid_metrics,
         )
         reports.append(report.model_dump())
         artifact_store.write_json(project_id, f"iteration_{i}_report.json", report.model_dump())
 
-        # Iteration Code Agent: author + run a reproducible snippet for this change.
         snippet = code_authoring.build_iteration_code(
-            i, model_name, suggestion.get("params", {}), suggestion.get("hypothesis", "")
+            i, model_name, suggestion.params, suggestion.hypothesis
         )
         code_authoring.run_code_agent(client, project_id, f"iteration_{i}.py", snippet, max_debug=0)
 
@@ -121,16 +166,20 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
             best_score = new_score
             best_model = f"{model_name} (iter {i})"
             best_family = model_name
-            best_params = suggestion.get("params", {})
+            best_params = suggestion.params
             _promote_best(project_id, model_name)
 
-        decision = client.call_tool(EX, "stop_iteration_decision", {
-            "iteration": i, "max_iterations": max_iter,
-            "relative_improvement": rel, "min_relative_improvement": min_rel,
-            "overfit_suspected": overfit, "hypothesis_supported": True,
-        })
-        if decision.get("stop"):
-            stop_reason = decision.get("reason", "")
+        decision = validate_model(
+            IterationStopDecision,
+            client.call_tool(EX, "stop_iteration_decision", {
+                "iteration": i, "max_iterations": max_iter,
+                "relative_improvement": rel, "min_relative_improvement": min_rel,
+                "overfit_suspected": overfit, "hypothesis_supported": True,
+            }),
+            context="iteration stop decision",
+        )
+        if decision.stop:
+            stop_reason = decision.reason
             break
 
     state["iteration_reports"] = reports

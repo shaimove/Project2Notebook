@@ -3,12 +3,20 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class CreateProjectRequest(BaseModel):
-    name: str = Field(default="Untitled Project")
-    description: Optional[str] = None
+    name: str = Field(default="Untitled Project", min_length=1, max_length=200)
+    description: Optional[str] = Field(default=None, max_length=5000)
+
+    @field_validator("name")
+    @classmethod
+    def strip_name(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("name must not be empty")
+        return stripped
 
 
 class ProjectInfo(BaseModel):
@@ -29,10 +37,10 @@ class UploadResponse(BaseModel):
 
 
 class RunRequest(BaseModel):
-    project_id: str
+    project_id: str = Field(min_length=1)
     enable_prior_art: bool = True
-    max_iterations: int = 3
-    min_relative_improvement: float = 0.05
+    max_iterations: int = Field(default=3, ge=0, le=10)
+    min_relative_improvement: float = Field(default=0.05, ge=0.0, le=1.0)
 
 
 class ToolCallLog(BaseModel):
@@ -51,6 +59,11 @@ class TimelineItem(BaseModel):
     detail: str = ""
 
 
+class PipelineError(BaseModel):
+    step: str
+    error: str
+
+
 class RunResponse(BaseModel):
     project_id: str
     status: str
@@ -58,12 +71,14 @@ class RunResponse(BaseModel):
     tool_calls: List[Dict[str, Any]] = Field(default_factory=list)
     artifacts: Dict[str, Any] = Field(default_factory=dict)
     summary: str = ""
+    errors: List[PipelineError] = Field(default_factory=list)
 
 
 class StatusResponse(BaseModel):
     project_id: str
     status: str
     timeline: List[Dict[str, Any]] = Field(default_factory=list)
+    errors: List[PipelineError] = Field(default_factory=list)
 
 
 class ChatRequest(BaseModel):

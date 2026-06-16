@@ -6,16 +6,23 @@ narrative fields with an LLM when configured.
 """
 from __future__ import annotations
 
+import logging
 from typing import Any, Dict, List
+
+from pydantic import ValidationError as PydanticValidationError
 
 from backend.agents.state import DataScientist
 from backend.mcp_client.client import MCPClient
+from backend.schemas.data_audit import DatasetSummary, TargetDistribution
 from backend.schemas.project_spec import ProjectSpec
+from backend.schemas.validation import validate_model
 from backend.services import artifact_store, memory
 from backend.services.llm import llm
 
 PU = "project-understanding-tools"
 DI = "data-inspection-tools"
+
+logger = logging.getLogger(__name__)
 
 
 def run(state: DataScientist, client: MCPClient) -> DataScientist:
@@ -29,19 +36,29 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
     target_kind = None
     n_classes = None
     if csv_path:
-        ds = client.call_tool(DI, "load_dataset", {"csv_path": csv_path})
-        columns = ds.get("columns", [])
+        ds = validate_model(
+            DatasetSummary,
+            client.call_tool_required(DI, "load_dataset", {"csv_path": csv_path}),
+            context="load_dataset",
+        )
+        columns = ds.columns
 
     targets = client.call_tool(PU, "identify_targets", {"text": text, "columns": columns}).get("targets", [])
     target = targets[0] if targets else None
 
     if csv_path and target:
-        dist = client.call_tool(DI, "inspect_target_distribution", {"csv_path": csv_path, "target": target})
-        if dist.get("kind") == "continuous":
+        dist = validate_model(
+            TargetDistribution,
+            client.call_tool_required(
+                DI, "inspect_target_distribution", {"csv_path": csv_path, "target": target}
+            ),
+            context="inspect_target_distribution",
+        )
+        if dist.kind == "continuous":
             target_kind = "continuous"
-        elif dist.get("kind") == "categorical":
+        elif dist.kind == "categorical":
             target_kind = "categorical"
-            n_classes = dist.get("n_classes")
+            n_classes = dist.n_classes
 
     task = client.call_tool(PU, "infer_ml_task", {
         "text": text, "target_kind": target_kind, "n_classes": n_classes,
@@ -87,7 +104,9 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
         ],
     )
 
-    spec_dict = _maybe_llm_enrich(spec, text).model_dump()
+    spec = _maybe_llm_enrich(spec, text)
+    spec = validate_model(ProjectSpec, spec.model_dump(), context="project_spec")
+    spec_dict = spec.model_dump()
     artifact_store.write_json(state["project_id"], "project_spec.json", spec_dict)
     artifact_store.write_text(state["project_id"], "project_understanding.md", _render_md(spec_dict))
     state["project_spec"] = spec_dict
@@ -163,6 +182,7 @@ def _maybe_llm_enrich(spec: ProjectSpec, text: str) -> ProjectSpec:
     )
     data = llm.complete_json(system, prompt, fallback=spec.model_dump())
     try:
-        return ProjectSpec(**{**spec.model_dump(), **data})
-    except Exception:
+        return ProjectSpec.model_validate({**spec.model_dump(), **data})
+    except PydanticValidationError:
+        logger.warning("LLM returned invalid project spec; keeping deterministic spec")
         return spec

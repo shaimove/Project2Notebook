@@ -13,6 +13,7 @@ import { ModelComparisonTable } from "../components/ModelComparisonTable";
 import { IterationHistory } from "../components/IterationHistory";
 import { NotebookPreview } from "../components/NotebookPreview";
 import { Markdown } from "../components/Markdown";
+import { PipelineErrors } from "../components/PipelineErrors";
 
 export default function Home() {
   const [project, setProject] = useState<ProjectInfo | null>(null);
@@ -62,6 +63,7 @@ export default function Home() {
         {/* CENTER */}
         <div className="col">
           <ProjectSummary result={result} />
+          <PipelineErrors result={result} />
           <ModelComparisonTable rows={artifacts.model_comparison || []} />
           {result && project && <NotebookPreview projectId={project.project_id} />}
           {!result && (

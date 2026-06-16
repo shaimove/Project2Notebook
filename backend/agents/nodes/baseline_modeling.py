@@ -15,6 +15,9 @@ import pandas as pd
 from backend.agents import code_authoring
 from backend.agents.state import DataScientist
 from backend.mcp_client.client import MCPClient
+from backend.mcp_client.tool_result import optional_tool_result
+from backend.schemas.experiment import ModelComparisonResult, ModelResult
+from backend.schemas.validation import parse_tool_results, validate_model
 from backend.services import artifact_store, memory
 
 MD = "modeling-tools"
@@ -37,18 +40,23 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
     n_rows = (state.get("data_audit_report") or {}).get("n_rows", 0)
     skip_svm = n_rows > 20000  # SVM scales poorly; skip on large data
 
-    results: List[Dict[str, Any]] = []
+    raw_results: List[Dict[str, Any]] = []
     for tool_name, model_name in _TOOLS:
         if model_name == "svm" and skip_svm:
             continue
         res = client.call_tool(MD, tool_name, {"project_id": project_id, "spec": spec})
-        if "error" not in res:
-            results.append(res)
+        if optional_tool_result(res, tool=tool_name, server=MD):
+            raw_results.append(res)
 
-    comparison = client.call_tool(MD, "compare_models", {"results": results})
-    rows = comparison.get("rows", [])
+    results, skipped = parse_tool_results(ModelResult, raw_results, context="model training")
+    comparison_obj = validate_model(
+        ModelComparisonResult,
+        client.call_tool_required(MD, "compare_models", {"results": results}),
+        context="compare_models",
+    )
+    rows = [row.model_dump() for row in comparison_obj.rows]
 
-    payload = {"results": results, "comparison": comparison}
+    payload = {"results": results, "comparison": comparison_obj.model_dump()}
     artifact_store.write_json(project_id, "baseline_results.json", payload)
     artifact_store.write_json(project_id, "model_results.json", payload)
     if rows:
@@ -57,22 +65,27 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
         )
         pd.DataFrame(rows).to_csv(artifact_store.tables_dir(project_id) / "model_comparison.csv", index=False)
 
-    metric = results[0].get("primary_metric") if results else ""
-    artifact_store.write_text(project_id, "modeling_report.md", _render_md(rows, metric))
+    metric = results[0].get("primary_metric") if results else comparison_obj.primary_metric
+    notes: List[str] = []
+    if skipped:
+        notes.append(f"Skipped {len(skipped)} invalid model result(s): {', '.join(skipped)}.")
+    artifact_store.write_text(
+        project_id,
+        "modeling_report.md",
+        _render_md(rows, metric, notes),
+    )
 
     state["baseline_results"] = {"results": results}
     state["model_comparison"] = rows
-    best = None
+    best = comparison_obj.best_model
     if results:
-        state["primary_metric"] = results[0].get("primary_metric")
+        state["primary_metric"] = results[0].get("primary_metric") or comparison_obj.primary_metric
         state["higher_is_better"] = results[0].get("higher_is_better", True)
-        best = comparison.get("best_model")
         best_row = next((r for r in rows if r["model"] == best), None)
         if best_row:
             state["best_validation_score"] = best_row.get("valid_score")
             state["best_pipeline_id"] = best
 
-    # Modeling Code Agent: author + run a reproducible baseline script.
     code = code_authoring.build_modeling_code(
         (state.get("csv_paths") or [""])[0], state.get("preprocessing_plan") or {}, spec
     )
@@ -90,10 +103,15 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
     return state
 
 
-def _render_md(rows: List[Dict[str, Any]], metric: str) -> str:
-    lines = ["# Baseline Modeling Report", "", f"Primary metric: **{metric}** (validation).", "",
-             "| Model | Family | Valid | Train-Valid gap | Runtime (s) |",
-             "|---|---|---|---|---|"]
+def _render_md(rows: List[Dict[str, Any]], metric: str, notes: List[str]) -> str:
+    lines = ["# Baseline Modeling Report", "", f"Primary metric: **{metric}** (validation).", ""]
+    if notes:
+        lines.extend(notes)
+        lines.append("")
+    lines.extend([
+        "| Model | Family | Valid | Train-Valid gap | Runtime (s) |",
+        "|---|---|---|---|---|",
+    ])
     for r in rows:
         vs = round(r["valid_score"], 4) if r.get("valid_score") is not None else "—"
         gap = round(r["train_valid_gap"], 4) if r.get("train_valid_gap") is not None else "—"

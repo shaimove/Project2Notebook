@@ -9,7 +9,8 @@ from typing import Any, Dict, List
 
 from backend.agents.state import DataScientist
 from backend.mcp_client.client import MCPClient
-from backend.schemas.data_audit import ColumnProfile, DataAuditReport
+from backend.schemas.data_audit import ColumnProfile, DataAuditReport, TargetDistribution
+from backend.schemas.validation import parse_models, validate_model
 from backend.services import artifact_store, memory
 
 DI = "data-inspection-tools"
@@ -21,31 +22,44 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
     targets = spec.get("targets") or []
     target = targets[0] if targets else None
 
-    profile = client.call_tool(DI, "profile_dataset", {"csv_path": csv_path})
+    profile = client.call_tool_required(DI, "profile_dataset", {"csv_path": csv_path})
     missing = client.call_tool(DI, "summarize_missing_values", {"csv_path": csv_path})
     invalid = client.call_tool(DI, "detect_invalid_values", {"csv_path": csv_path})
     dups = client.call_tool(DI, "detect_duplicates", {"csv_path": csv_path})
     time_cols = client.call_tool(DI, "detect_time_columns", {"csv_path": csv_path}).get("time_columns", [])
     entity = client.call_tool(DI, "detect_entity_columns", {"csv_path": csv_path})
 
-    columns: List[ColumnProfile] = []
+    columns, skipped = parse_models(
+        ColumnProfile,
+        profile.get("columns", []),
+        context="ColumnProfile",
+        on_item=lambda col: {**col, "inferred_role": _infer_role(col, target, time_cols, entity)},
+    )
     high_card: List[str] = []
     constant: List[str] = []
-    for col in profile.get("columns", []):
-        role = _infer_role(col, target, time_cols, entity)
-        columns.append(ColumnProfile(**{**col, "inferred_role": role}))
-        if col.get("is_constant"):
-            constant.append(col["name"])
-        if (col.get("cardinality") or 0) > 50:
-            high_card.append(col["name"])
+    for col in columns:
+        if col.is_constant:
+            constant.append(col.name)
+        if (col.cardinality or 0) > 50:
+            high_card.append(col.name)
 
     target_dist: Dict[str, Any] = {}
     class_imbalance = None
     if target:
-        target_dist = client.call_tool(DI, "inspect_target_distribution", {"csv_path": csv_path, "target": target})
-        class_imbalance = target_dist.get("imbalance_ratio")
+        dist = validate_model(
+            TargetDistribution,
+            client.call_tool_required(
+                DI, "inspect_target_distribution", {"csv_path": csv_path, "target": target}
+            ),
+            context="inspect_target_distribution",
+        )
+        target_dist = dist.model_dump()
+        class_imbalance = dist.imbalance_ratio
 
     leakage_prone = _leakage_prone_columns(profile, spec)
+    notes = _notes(invalid, dups, class_imbalance)
+    if skipped:
+        notes.append(f"Skipped {len(skipped)} column(s) with invalid profile data: {', '.join(skipped)}.")
 
     report = DataAuditReport(
         n_rows=profile.get("n_rows", 0),
@@ -62,11 +76,10 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
         constant_columns=constant,
         high_cardinality_columns=high_card,
         description_vs_data_mismatches=[],
-        notes=_notes(invalid, dups, class_imbalance),
+        notes=notes,
     )
     d = report.model_dump()
     pid = state["project_id"]
-    # Read prior memory before recording findings (artifact-memory design).
     _ = memory.load(pid)
     artifact_store.write_json(pid, "data_audit_report.json", d)
     artifact_store.write_text(pid, "data_audit.md", _render_md(d))

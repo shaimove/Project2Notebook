@@ -28,7 +28,12 @@ export function RunPanel({ project, onResult, onLog }: Props) {
         minRelImprovement: minRel,
       });
       onResult(r);
-      onLog(`Run ${r.status} — ${r.tool_calls.length} tool calls`);
+      const errCount = r.errors?.length ?? 0;
+      onLog(
+        errCount
+          ? `Run ${r.status} — ${r.tool_calls.length} tool calls, ${errCount} error(s)`
+          : `Run ${r.status} — ${r.tool_calls.length} tool calls`
+      );
     } catch (e: any) {
       onLog(`Run error: ${e.message}`);
     } finally {

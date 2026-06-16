@@ -13,6 +13,7 @@ from backend.agents.state import DataScientist
 from backend.config import settings
 from backend.mcp_client.client import MCPClient
 from backend.schemas.project_spec import PriorArtReport
+from backend.schemas.validation import validate_model
 from backend.services import artifact_store, memory
 
 PA = "prior-art-tools"
@@ -24,7 +25,11 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
     task = spec.get("ml_task_type", "unknown")
 
     if not state.get("enable_prior_art", True):
-        report = PriorArtReport(enabled=False, message="Prior Art Agent disabled for this run.")
+        report = validate_model(
+            PriorArtReport,
+            PriorArtReport(enabled=False, message="Prior Art Agent disabled for this run.").model_dump(),
+            context="prior_art_report",
+        )
         _persist(state, report)
         return state
 
@@ -63,6 +68,7 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
         ideas_to_ignore=candidates.get("ideas_to_ignore", []),
         summary=summary,
     )
+    report = validate_model(PriorArtReport, report.model_dump(), context="prior_art_report")
     _persist(state, report)
     return state
 

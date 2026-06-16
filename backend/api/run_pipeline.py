@@ -1,6 +1,7 @@
 """Run the agentic pipeline and expose status/artifacts."""
 from __future__ import annotations
 
+import logging
 from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException
@@ -10,6 +11,8 @@ from backend.agents.state import new_state
 from backend.schemas.api import RunRequest, RunResponse, StatusResponse
 from backend.services import project_store
 from backend.services.run_result import assemble_artifacts, build_summary
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["run"])
 
@@ -22,6 +25,7 @@ def run_pipeline(req: RunRequest) -> RunResponse:
     if not record.get("csv_paths"):
         raise HTTPException(status_code=400, detail="upload at least one CSV before running")
 
+    logger.info("Starting pipeline run for project %s", req.project_id)
     project_store.update_project(req.project_id, status="running")
 
     state = new_state(
@@ -46,7 +50,15 @@ def run_pipeline(req: RunRequest) -> RunResponse:
         "errors": state.get("errors", []),
     }
     project_store.set_run_result(req.project_id, result)
-    return RunResponse(**{k: result[k] for k in ("project_id", "status", "timeline", "tool_calls", "artifacts", "summary")})
+    if state.get("errors"):
+        logger.warning(
+            "Pipeline completed with %d error(s) for project %s",
+            len(state["errors"]),
+            req.project_id,
+        )
+    else:
+        logger.info("Pipeline completed successfully for project %s", req.project_id)
+    return RunResponse(**result)
 
 
 @router.get("/projects/{project_id}/status", response_model=StatusResponse)
@@ -59,6 +71,7 @@ def get_status(project_id: str) -> StatusResponse:
         project_id=project_id,
         status=record.get("status", "created"),
         timeline=run.get("timeline", []),
+        errors=run.get("errors", []),
     )
 
 

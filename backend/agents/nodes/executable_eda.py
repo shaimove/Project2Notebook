@@ -13,6 +13,7 @@ from typing import Any, Dict, List
 
 from backend.agents import code_authoring
 from backend.agents.state import DataScientist
+from backend.exceptions import PipelineStepError
 from backend.mcp_client.client import MCPClient
 from backend.services import artifact_store, memory
 
@@ -33,6 +34,12 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
 
     code = code_authoring.build_eda_code(csv_path, target, numeric_cols, time_cols[0] if time_cols else None)
     result = code_authoring.run_code_agent(client, project_id, "eda.py", code)
+    if not result.get("ok"):
+        if result.get("blocked"):
+            detail = result.get("stderr") or "blocked by safety validation"
+        else:
+            detail = result.get("stderr") or "unknown error"
+        raise PipelineStepError(f"EDA code execution failed: {str(detail)[:300]}")
 
     plots = sorted(set(result.get("plots", [])))
     tables = sorted(set(result.get("tables", [])))

@@ -55,6 +55,9 @@ class Settings:
         # Code runner
         self.code_timeout_seconds: int = int(os.getenv("CODE_TIMEOUT_SECONDS", "120"))
 
+        # Upload limits
+        self.max_upload_bytes: int = int(os.getenv("MAX_UPLOAD_BYTES", str(50 * 1024 * 1024)))
+
         self._ensure_dirs()
 
     @property

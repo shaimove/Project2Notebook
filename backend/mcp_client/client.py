@@ -6,10 +6,14 @@ transparent trace of which server/tool was used, with what input and result.
 """
 from __future__ import annotations
 
+import logging
 import time
 from typing import Any, Callable, Dict, List, Optional
 
 from backend.mcp_client.registry import registry
+from backend.mcp_client.tool_result import require_tool_result
+
+logger = logging.getLogger(__name__)
 
 
 def _summarize(output: Any) -> str:
@@ -62,7 +66,24 @@ class MCPClient:
         self.call_log.append(log_entry)
         if self._on_log:
             self._on_log(log_entry)
+        if status == "error":
+            logger.warning(
+                "Tool error %s/%s: %s",
+                server_name,
+                tool_name,
+                _summarize(output),
+            )
         return output
+
+    def call_tool_required(
+        self, server_name: str, tool_name: str, arguments: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Like ``call_tool`` but raises ``ToolError`` when the tool fails."""
+        return require_tool_result(
+            self.call_tool(server_name, tool_name, arguments),
+            tool=tool_name,
+            server=server_name,
+        )
 
 
 def _redact(arguments: Dict[str, Any]) -> Dict[str, Any]:

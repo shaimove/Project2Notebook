@@ -37,6 +37,12 @@ export interface RunResponse {
   tool_calls: ToolCall[];
   artifacts: Record<string, any>;
   summary: string;
+  errors: PipelineError[];
+}
+
+export interface PipelineError {
+  step: string;
+  error: string;
 }
 
 async function jsonOrThrow(res: Response) {

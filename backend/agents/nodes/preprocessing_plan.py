@@ -15,6 +15,8 @@ from __future__ import annotations
 from backend.agents import code_authoring
 from backend.agents.state import DataScientist
 from backend.mcp_client.client import MCPClient
+from backend.schemas.experiment import PreprocessingPlan, SplitReport
+from backend.schemas.validation import validate_model
 from backend.services import artifact_store, memory
 
 PP = "preprocessing-tools"
@@ -28,26 +30,28 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
     _ = memory.load(project_id)
 
     profile = {"columns": audit.get("columns", [])}
-    plan = client.call_tool(PP, "create_preprocessing_plan", {"profile": profile, "spec": spec})
+    plan_raw = client.call_tool_required(
+        PP, "create_preprocessing_plan", {"profile": profile, "spec": spec}
+    )
+    plan = validate_model(PreprocessingPlan, plan_raw, context="preprocessing plan").model_dump()
 
     leak = client.call_tool(PP, "check_preprocessing_leakage", {"plan": plan, "spec": spec})
     plan.setdefault("notes", []).append(
         "Leakage check: " + ("no issues" if leak.get("ok") else "; ".join(leak.get("leakage_warnings", [])))
     )
 
-    # Canonical leakage-safe execution via the preprocessing MCP tools.
-    split_report = client.call_tool(PP, "build_train_valid_test_split", {
+    split_raw = client.call_tool_required(PP, "build_train_valid_test_split", {
         "csv_path": csv_path, "plan": plan, "spec": spec, "project_id": project_id,
     })
-    client.call_tool(PP, "fit_preprocessor_on_train", {"project_id": project_id})
-    shapes = client.call_tool(PP, "transform_valid_test", {"project_id": project_id})
-    split_report["feature_count"] = shapes.get("n_features")
+    client.call_tool_required(PP, "fit_preprocessor_on_train", {"project_id": project_id})
+    shapes = client.call_tool_required(PP, "transform_valid_test", {"project_id": project_id})
+    split_raw["feature_count"] = shapes.get("n_features")
+    split_report = validate_model(SplitReport, split_raw, context="split report").model_dump()
 
     artifact_store.write_json(project_id, "preprocessing_plan.json", plan)
     artifact_store.write_json(project_id, "split_report.json", split_report)
     artifact_store.write_text(project_id, "preprocessing_decisions.md", _render_md(plan, split_report))
 
-    # Preprocessing Code Agent: author + run a reproducible script.
     code = code_authoring.build_preprocessing_code(csv_path, plan, spec)
     code_authoring.run_code_agent(client, project_id, "preprocessing.py", code)
 

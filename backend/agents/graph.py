@@ -8,6 +8,7 @@ LangGraph-style ``DataScientist`` state and can be ported to LangGraph directly.
 """
 from __future__ import annotations
 
+import logging
 import time
 from typing import Callable, List, Tuple
 
@@ -48,17 +49,21 @@ WORKFLOW: List[Tuple[str, NodeFn]] = [
     ("Notebook Author (code)", notebook_author.run),
 ]
 
+logger = logging.getLogger(__name__)
+
 
 def run_graph(state: DataScientist) -> DataScientist:
     client = MCPClient(on_log=lambda entry: state["tool_calls"].append(entry))
 
     for idx, (title, fn) in enumerate(WORKFLOW, start=1):
         start = time.time()
+        logger.info("Pipeline step %d: %s", idx, title)
         try:
             state = fn(state, client)
             detail = _detail_for(title, state)
             _add_timeline(state, idx, title, "completed", detail, start)
         except Exception as exc:  # noqa: BLE001 - keep the run alive, record the error
+            logger.exception("Pipeline step failed: %s", title)
             state["errors"].append({"step": title, "error": f"{type(exc).__name__}: {exc}"})
             _add_timeline(state, idx, title, "error", f"{type(exc).__name__}: {exc}", start)
     return state

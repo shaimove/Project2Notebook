@@ -53,3 +53,20 @@ class EDACheck(BaseModel):
 class EDAPlan(BaseModel):
     checks: List[EDACheck] = Field(default_factory=list)
     summary: str = ""
+
+
+class DatasetSummary(BaseModel):
+    """Output of data-inspection-tools load_dataset."""
+
+    n_rows: int = 0
+    n_cols: int = 0
+    columns: List[str] = Field(default_factory=list)
+    dtypes: Dict[str, str] = Field(default_factory=dict)
+
+
+class TargetDistribution(BaseModel):
+    """Output of data-inspection-tools inspect_target_distribution."""
+
+    kind: Optional[str] = None
+    n_classes: Optional[int] = None
+    imbalance_ratio: Optional[float] = None

@@ -40,8 +40,8 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
     sections = _build_sections(state, spec, audit, prior, plan, split, rows, csv_path)
 
     nb_spec = {"title": "Project2Notebook — Final Report", "sections": sections}
-    client.call_tool(NB, "update_notebook", {"project_id": project_id, "spec": nb_spec})
-    out = client.call_tool(NB, "export_final_notebook", {"project_id": project_id})
+    client.call_tool_required(NB, "update_notebook", {"project_id": project_id, "spec": nb_spec})
+    out = client.call_tool_required(NB, "export_final_notebook", {"project_id": project_id})
 
     state["notebook_path"] = out.get("notebook_path")
     memory.update(project_id, phase="Notebook Author")

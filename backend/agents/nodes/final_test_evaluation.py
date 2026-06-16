@@ -9,7 +9,8 @@ from typing import Any, Dict, List
 
 from backend.agents.state import DataScientist
 from backend.mcp_client.client import MCPClient
-from backend.schemas.experiment import FinalTestReport
+from backend.schemas.experiment import FinalTestReport, ModelEvaluationResult
+from backend.schemas.validation import validate_model
 from backend.services import artifact_store, memory
 
 MD = "modeling-tools"
@@ -23,18 +24,25 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
     higher = bool(state.get("higher_is_better", True))
     best_model = state.get("best_pipeline_id") or "best"
 
-    # The promoted best model is stored as models/best.joblib (see iteration_loop).
-    test_eval = client.call_tool(MD, "evaluate_model", {
-        "project_id": project_id, "spec": spec, "model_name": "best", "split": "test",
-    })
-    valid_eval = client.call_tool(MD, "evaluate_model", {
-        "project_id": project_id, "spec": spec, "model_name": "best", "split": "valid",
-    })
+    test_eval = validate_model(
+        ModelEvaluationResult,
+        client.call_tool_required(MD, "evaluate_model", {
+            "project_id": project_id, "spec": spec, "model_name": "best", "split": "test",
+        }),
+        context="test evaluation",
+    )
+    valid_eval = validate_model(
+        ModelEvaluationResult,
+        client.call_tool_required(MD, "evaluate_model", {
+            "project_id": project_id, "spec": spec, "model_name": "best", "split": "valid",
+        }),
+        context="valid evaluation",
+    )
 
-    test_metrics = test_eval.get("metrics", {})
-    valid_metrics = valid_eval.get("metrics", {})
-    test_score = test_eval.get("score")
-    valid_score = valid_eval.get("score")
+    test_metrics = test_eval.metrics
+    valid_metrics = valid_eval.metrics
+    test_score = test_eval.score
+    valid_score = valid_eval.score
 
     goal_met = _goal_met(metric, test_score, higher)
     gap_note = _gap_note(metric, valid_score, test_score, higher)
@@ -85,7 +93,6 @@ def _goal_met(metric: str, score, higher: bool) -> bool:
         return score >= 0.6
     if metric == "r2":
         return score >= 0.3
-    # For error metrics we cannot judge absolutely; mark unknown as met if finite.
     return True
 
 

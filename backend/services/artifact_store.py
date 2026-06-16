@@ -6,10 +6,14 @@ so the run is transparent and reproducible.
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from backend.config import settings
+from backend.exceptions import ArtifactCorruptError
+
+logger = logging.getLogger(__name__)
 
 
 def project_artifact_dir(project_id: str) -> Path:
@@ -48,11 +52,16 @@ def write_json(project_id: str, name: str, data: Any) -> Path:
     return path
 
 
-def read_json(project_id: str, name: str) -> Any:
+def read_json(project_id: str, name: str, *, default: Any = None) -> Any:
     path = project_artifact_dir(project_id) / name
     if not path.exists():
-        return None
-    return json.loads(path.read_text(encoding="utf-8"))
+        return default
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ArtifactCorruptError(
+            f"Corrupt JSON artifact '{name}' for project {project_id}"
+        ) from exc
 
 
 def write_text(project_id: str, name: str, text: str) -> Path:

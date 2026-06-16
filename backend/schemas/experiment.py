@@ -30,17 +30,64 @@ class SplitReport(BaseModel):
     time_column: Optional[str] = None
     stratified: bool = False
     rationale: str = ""
+    feature_count: Optional[int] = None
 
 
 class ModelResult(BaseModel):
+    """Output of a modeling-tools train_* call."""
+
     model_name: str
-    family: str
+    family: str = ""
     train_metrics: Dict[str, float] = Field(default_factory=dict)
     valid_metrics: Dict[str, float] = Field(default_factory=dict)
     primary_metric: str = ""
+    higher_is_better: bool = True
+    valid_score: Optional[float] = None
     train_valid_gap: Optional[float] = None
     runtime_seconds: Optional[float] = None
     notes: List[str] = Field(default_factory=list)
+
+
+class ModelComparisonRow(BaseModel):
+    model: str
+    family: Optional[str] = None
+    valid_score: Optional[float] = None
+    train_valid_gap: Optional[float] = None
+    runtime_seconds: Optional[float] = None
+    primary_metric: str = ""
+
+
+class ModelComparisonResult(BaseModel):
+    rows: List[ModelComparisonRow] = Field(default_factory=list)
+    best_model: Optional[str] = None
+    primary_metric: str = ""
+
+
+class ModelEvaluationResult(BaseModel):
+    """Output of modeling-tools evaluate_model."""
+
+    model_name: str = ""
+    split: str = ""
+    metrics: Dict[str, float] = Field(default_factory=dict)
+    primary_metric: str = ""
+    score: Optional[float] = None
+    higher_is_better: bool = True
+
+
+class IterationSuggestion(BaseModel):
+    """Output of experiment-tools suggest_next_iteration."""
+
+    supported: bool = False
+    action: str = "stop"
+    model_name: str = "boosting"
+    params: Dict[str, Any] = Field(default_factory=dict)
+    hypothesis: str = ""
+    motivation: str = ""
+
+
+class IterationStopDecision(BaseModel):
+    stop: bool = False
+    reason: str = ""
 
 
 class IterationReport(BaseModel):
