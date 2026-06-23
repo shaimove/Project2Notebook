@@ -45,4 +45,6 @@ def get_plot(project_id: str, name: str) -> FileResponse:
     path = artifact_store.plots_dir(project_id) / safe
     if not path.exists():
         raise HTTPException(status_code=404, detail="plot not found")
+    if safe.lower().endswith(".html"):
+        return FileResponse(path, media_type="text/html")
     return FileResponse(path, media_type="image/png")

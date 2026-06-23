@@ -15,10 +15,22 @@ import numpy as np
 import pandas as pd
 
 from backend.services import artifact_store
+from backend.services.csv_io import (
+    chunked_duplicate_count,
+    chunked_missing_fractions,
+    csv_load_plan,
+    drop_duplicates_streaming,
+    estimate_row_count,
+    load_csv_for_analysis,
+    load_csv_full,
+    transform_csv_chunked,
+)
 
 
-def load_csv(csv_path: str) -> pd.DataFrame:
-    return pd.read_csv(csv_path)
+def load_csv(csv_path: str, *, for_analysis: bool = False, target_column: Optional[str] = None) -> pd.DataFrame:
+    if for_analysis:
+        return load_csv_for_analysis(csv_path, target_column=target_column)
+    return load_csv_full(csv_path)
 
 
 def is_datetime_like(series: pd.Series) -> bool:

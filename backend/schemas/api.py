@@ -41,6 +41,18 @@ class RunRequest(BaseModel):
     enable_prior_art: bool = True
     max_iterations: int = Field(default=3, ge=0, le=10)
     min_relative_improvement: float = Field(default=0.05, ge=0.0, le=1.0)
+    resume: bool = False
+    from_step: Optional[int] = Field(default=None, ge=1, le=20)
+
+
+class RunSessionInfo(BaseModel):
+    run_id: str
+    project_id: str
+    status: str
+    started_at: str
+    finished_at: Optional[str] = None
+    config_json: str = ""
+    resume_from_step: Optional[int] = None
 
 
 class ToolCallLog(BaseModel):
@@ -66,6 +78,8 @@ class PipelineError(BaseModel):
 
 class RunResponse(BaseModel):
     project_id: str
+    run_id: str = ""
+    resumed_from_step: Optional[int] = None
     status: str
     timeline: List[Dict[str, Any]] = Field(default_factory=list)
     tool_calls: List[Dict[str, Any]] = Field(default_factory=list)

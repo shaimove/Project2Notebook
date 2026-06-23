@@ -84,6 +84,13 @@ def list_plots(project_id: str) -> List[str]:
     return sorted(str(p) for p in pdir.glob("*.png"))
 
 
+def list_html_plots(project_id: str) -> List[str]:
+    pdir = plots_dir(project_id)
+    if not pdir.exists():
+        return []
+    return sorted(str(p) for p in pdir.glob("*.html"))
+
+
 def list_artifacts(project_id: str) -> Dict[str, Any]:
     """Return a manifest of all artifacts produced for a project."""
     adir = project_artifact_dir(project_id)

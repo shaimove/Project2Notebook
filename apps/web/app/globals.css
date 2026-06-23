@@ -40,12 +40,259 @@ a {
   overflow: hidden;
 }
 
+.dashboard-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 14px;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.dashboard-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: 14px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dashboard-sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sidebar-log {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-log .scroll-box {
+  flex: 1;
+  min-height: 0;
+}
+
+.dashboard-results {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.results-header {
+  padding: 12px 14px 0;
+}
+
+.results-header h2 {
+  margin: 0;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.tab-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-2);
+}
+
+.tab {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.tab.active {
+  background: var(--panel);
+  color: var(--accent);
+  border-color: var(--border);
+}
+
+.tab-panel {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 14px;
+}
+
+.tab-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.scroll-box {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+}
+
+.scroll-box .card {
+  margin-bottom: 12px;
+}
+
+.dashboard-empty {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dashboard-empty .scroll-box {
+  flex: 1;
+  min-height: 0;
+}
+
+.setup-card .setup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.setup-card .setup-header h2 {
+  margin: 0;
+}
+
+.setup-card {
+  flex-shrink: 0;
+  padding: 10px 14px;
+}
+
+.setup-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.85fr) minmax(140px, 1.1fr) minmax(140px, 1.1fr) minmax(140px, 1.1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.setup-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 2px;
+}
+
+.setup-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+@media (max-width: 1100px) {
+  .setup-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .setup-actions {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-body {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-sidebar {
+    max-height: 160px;
+  }
+}
+
+.setup-advanced {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+.file-chip {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-chip.ok {
+  color: var(--ok);
+}
+
+.start-btn {
+  margin-top: 0;
+  white-space: nowrap;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+}
+
+.metrics-panel {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.metrics-panel h3 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.decision-tab-content .decision-section {
+  margin-bottom: 8px;
+}
+
+.log-line {
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+
+.tab-panel .scroll-box {
+  height: 100%;
+}
+
 .col {
   display: flex;
   flex-direction: column;
   gap: 14px;
   overflow-y: auto;
   padding-right: 4px;
+}
+
+.dashboard-app > .header {
+  flex-shrink: 0;
 }
 
 .header {
@@ -109,13 +356,15 @@ a {
 }
 
 .field {
-  margin-bottom: 10px;
+  margin-bottom: 0;
+  min-width: 0;
 }
 .field label {
   display: block;
   color: var(--muted);
   margin-bottom: 4px;
-  font-size: 12px;
+  font-size: 11px;
+  line-height: 1.25;
 }
 .field input[type="text"],
 .field input[type="number"] {
@@ -125,6 +374,12 @@ a {
   border: 1px solid var(--border);
   background: var(--panel-2);
   color: var(--text);
+}
+.field input[type="file"] {
+  width: 100%;
+  max-width: 100%;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .file-row {
@@ -248,6 +503,13 @@ tr.best td {
   border: 1px solid var(--border);
   background: white;
 }
+.plotly-frame {
+  width: 100%;
+  min-height: 640px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+}
 
 .muted {
   color: var(--muted);
@@ -311,6 +573,66 @@ pre.md {
 }
 .banner.warn {
   border-color: rgba(251, 191, 36, 0.4);
+  color: var(--warn);
+}
+
+.decision-section {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  background: var(--panel-2);
+}
+.decision-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+.decision-step {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin-bottom: 2px;
+}
+.decision-title {
+  font-weight: 600;
+  font-size: 13px;
+}
+.decision-summary {
+  margin-top: 4px;
+}
+.decision-toggle {
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+}
+.decision-body {
+  padding: 0 12px 12px;
+  border-top: 1px solid var(--border);
+}
+.decision-body h3 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 12px 0 6px;
+}
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pill.warn-pill {
+  background: rgba(251, 191, 36, 0.15);
   color: var(--warn);
 }
 

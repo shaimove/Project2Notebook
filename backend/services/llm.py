@@ -14,10 +14,12 @@ key, while still benefiting from an LLM when one is configured.
 """
 from __future__ import annotations
 
+import base64
 import json
 import urllib.error
 import urllib.request
-from typing import Any, Dict, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from backend.config import settings
 
@@ -58,6 +60,55 @@ class LLM:
                 method="POST",
             )
             with urllib.request.urlopen(req, timeout=60) as resp:
+                body = json.loads(resp.read().decode("utf-8"))
+            return body["choices"][0]["message"]["content"]
+        except (urllib.error.URLError, KeyError, ValueError, TimeoutError):
+            return None
+
+    def complete_with_images(
+        self,
+        system: str,
+        prompt: str,
+        image_paths: List[str],
+        *,
+        max_tokens: int = 1200,
+    ) -> Optional[str]:
+        """Vision-capable completion using base64-encoded local PNG/JPEG files."""
+        if not self.enabled or not image_paths:
+            return None
+        content: List[Dict[str, Any]] = [{"type": "text", "text": prompt}]
+        for path in image_paths[:6]:
+            p = Path(path)
+            if not p.exists():
+                continue
+            mime = "image/png" if p.suffix.lower() == ".png" else "image/jpeg"
+            b64 = base64.b64encode(p.read_bytes()).decode("ascii")
+            content.append({
+                "type": "image_url",
+                "image_url": {"url": f"data:{mime};base64,{b64}"},
+            })
+        if len(content) == 1:
+            return None
+        try:
+            payload = {
+                "model": self.model,
+                "messages": [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": content},
+                ],
+                "max_tokens": max_tokens,
+                "temperature": 0.2,
+            }
+            req = urllib.request.Request(
+                "https://api.openai.com/v1/chat/completions",
+                data=json.dumps(payload).encode("utf-8"),
+                headers={
+                    "Authorization": f"Bearer {self._api_key}",
+                    "Content-Type": "application/json",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=120) as resp:
                 body = json.loads(resp.read().decode("utf-8"))
             return body["choices"][0]["message"]["content"]
         except (urllib.error.URLError, KeyError, ValueError, TimeoutError):

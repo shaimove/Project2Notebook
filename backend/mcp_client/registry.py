@@ -18,6 +18,8 @@ from typing import Dict
 from mcp_servers import (
     codegen_server,
     data_inspection_server,
+    data_quality_server,
+    eda_review_server,
     eda_server,
     experiment_server,
     modeling_server,
@@ -36,8 +38,10 @@ class InProcessRegistry:
         servers = [
             project_understanding_server.server,
             prior_art_server.server,
+            data_quality_server.server,
             data_inspection_server.server,
             eda_server.server,
+            eda_review_server.server,
             preprocessing_server.server,
             modeling_server.server,
             experiment_server.server,

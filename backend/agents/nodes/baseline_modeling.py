@@ -95,7 +95,7 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
         project_id,
         phase="Baseline Modeling",
         model_results=[
-            f"{r['model']}: {metric}={round(r['valid_score'], 4) if r.get('valid_score') is not None else 'n/a'}"
+            f"{r.get('display_name') or r['model']}: {metric}={round(r['valid_score'], 4) if r.get('valid_score') is not None else 'n/a'}"
             for r in rows
         ],
         best_pipeline=f"{best} (baseline)" if best else "",
@@ -115,5 +115,7 @@ def _render_md(rows: List[Dict[str, Any]], metric: str, notes: List[str]) -> str
     for r in rows:
         vs = round(r["valid_score"], 4) if r.get("valid_score") is not None else "—"
         gap = round(r["train_valid_gap"], 4) if r.get("train_valid_gap") is not None else "—"
-        lines.append(f"| {r['model']} | {r.get('family')} | {vs} | {gap} | {r.get('runtime_seconds', '—')} |")
+        lines.append(
+            f"| {r.get('display_name') or r['model']} | {r.get('family')} | {vs} | {gap} | {r.get('runtime_seconds', '—')} |"
+        )
     return "\n".join(lines)

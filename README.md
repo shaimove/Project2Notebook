@@ -13,6 +13,10 @@ It is **not** a chatbot and **not** plain AutoML. It is a transparent,
 tool-driven workflow where every step is an explicit agent node that calls tools
 through an **MCP client**, and every tool call is logged and shown in the UI.
 
+![Project2Notebook dashboard — project setup, results tabs, model comparison, and activity log](docs/dashboard-screenshot.png)
+
+*Example run on the demo churn dataset: upload a brief and CSV, click **Start**, and browse results across tabs (Data Quality, EDA, models, conclusions) while the pipeline log streams on the right.*
+
 ---
 
 ## Contents
@@ -92,14 +96,15 @@ Deterministic graph (`backend/agents/graph.py`); the only loop is the controlled
 iteration loop:
 
 ```
-Project Understanding → Prior Art → Data Audit → EDA Planning → Executable EDA
+Project Understanding → Prior Art → Data Quality Review → Data Audit
+→ EDA Planning → Executable EDA → EDA Review
 → Preprocessing Plan & Split → Baseline Modeling → First Conclusion
 → Iterative Improvement Loop (max 3) → Leakage Review
 → Final Test Evaluation → Notebook Author
 ```
 
-Each node writes a clear artifact (`project_spec.json`, `data_audit_report.json`,
-`eda_report.md`, `preprocessing_plan.json`, `split_report.json`,
+Each node writes a clear artifact (`project_spec.json`, `data_quality_report.json`,
+`data_audit_report.json`, `eda_report.md`, `eda_findings.json`,
 `baseline_results.json`, `model_comparison.csv`, `first_conclusion.md`,
 `iteration_*_report.json`, `iteration_summary.md`, `final_test_report.md`,
 `final_notebook.ipynb`) under `backend/storage/artifacts/{project_id}/`.
@@ -196,8 +201,9 @@ shows whether the LLM is enabled and never claims it did work it didn't.
 ---
 
 <a name="run-backend"></a>
-## How to run the backend
-Requires Python 3.9+.
+## How to run (single command)
+Requires Python 3.9+. **No Node.js required** — the dashboard is a self-contained
+page served directly by the backend.
 
 ```bash
 # from the repo root
@@ -205,8 +211,23 @@ python -m venv .venv && source .venv/bin/activate   # optional
 pip install -r requirements.txt
 cp .env.example .env                                # optional; defaults work offline
 
-uvicorn backend.main:app --reload --port 8000
+python run.py
+# Dashboard at http://localhost:8000  (opens automatically)
 # API docs at http://localhost:8000/docs
+```
+
+The dashboard lets you, in one place: select a **task brief**, a **primary CSV**,
+and **optional additional files**, click **Start**, and watch the results appear
+across scrollable tabs — data cleaning decisions, EDA conclusions, chosen metrics
+(primary + up to two secondary, plus the mandatory train–valid overfit check),
+preprocessing & split, model comparison, the selected model, and conclusions.
+
+See the [screenshot at the top](#project2notebook) for a full-page view of the UI.
+
+Equivalent manual command (e.g. with autoreload during development):
+
+```bash
+uvicorn backend.main:app --reload --port 8000
 ```
 
 <a name="run-mcp"></a>
@@ -231,8 +252,10 @@ use stdio transport instead of in-process, replace `InProcessRegistry` in
 (`list_available_tools`, `call_tool`) does not change.
 
 <a name="run-frontend"></a>
-## How to run the frontend
-Requires Node.js 18+.
+## Optional: the richer Next.js frontend
+The single-command dashboard above (served at `http://localhost:8000`) is the
+recommended way to run everything. A separate, richer Next.js UI also exists and
+is fully optional (requires Node.js 18+):
 
 ```bash
 cd apps/web
@@ -242,10 +265,10 @@ npm run dev
 # UI at http://localhost:3000
 ```
 
-Upload the brief + CSV (you can use the files in `demo/`), then click **Run
-Project2Notebook**. The UI shows the agent timeline, every MCP tool call,
-generated plots, the model comparison, the iteration history, the final test
-report, and a preview + download of the notebook.
+Both UIs talk to the same backend API. Upload the brief + CSV (you can use the
+files in `demo/`), then click **Start**. You'll see the agent timeline, every MCP
+tool call, generated plots, the model comparison, the iteration history, the final
+test report, and a download of the notebook.
 
 <a name="run-demo"></a>
 ## How to run the demo

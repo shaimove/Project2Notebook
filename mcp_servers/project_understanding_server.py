@@ -23,7 +23,8 @@ def _read_document(path: str) -> str:
     p = Path(path)
     if not p.exists():
         return ""
-    if p.suffix.lower() == ".pdf":
+    ext = p.suffix.lower()
+    if ext == ".pdf":
         try:
             from pypdf import PdfReader
 
@@ -31,10 +32,51 @@ def _read_document(path: str) -> str:
             return "\n".join((page.extract_text() or "") for page in reader.pages)
         except Exception:
             return ""
+    if ext == ".docx":
+        return _read_docx(p)
+    if ext == ".doc":
+        return _read_doc_legacy(p)
     return p.read_text(encoding="utf-8", errors="ignore")
 
 
-@server.tool("Read and return the text of the project document (md/txt/pdf).", {
+def _read_docx(path: Path) -> str:
+    try:
+        import zipfile
+        import xml.etree.ElementTree as ET
+
+        with zipfile.ZipFile(path) as zf:
+            xml = zf.read("word/document.xml")
+        root = ET.fromstring(xml)
+        ns = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+        parts = [node.text for node in root.iter(f"{ns}t") if node.text]
+        return "\n".join(parts)
+    except Exception:
+        return ""
+
+
+def _read_doc_legacy(path: Path) -> str:
+    """Best-effort .doc extraction (macOS textutil, else empty)."""
+    import shutil
+    import subprocess
+
+    textutil = shutil.which("textutil")
+    if textutil:
+        try:
+            proc = subprocess.run(
+                [textutil, "-stdout", "-convert", "txt", str(path)],
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=False,
+            )
+            if proc.stdout.strip():
+                return proc.stdout
+        except Exception:
+            pass
+    return ""
+
+
+@server.tool("Read and return the text of the project document (md/txt/pdf/doc/docx).", {
     "path": {"type": "string", "required": True}})
 def parse_project_document(args: Dict[str, Any]) -> Dict[str, Any]:
     text = _read_document(args["path"])

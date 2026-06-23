@@ -34,13 +34,19 @@ _DEFAULT: Dict[str, Any] = {
     "rejected_ideas": [],         # list of short strings
     "iteration_history": [],      # list of short strings
     "open_questions": [],
-    "phase_log": [],              # list of "phase: summary"
+    "phase_log": [],
+    "eda_findings_summary": "",
+    "feature_insights": [],
+    "important_columns": [],
+    "multicollinear_groups": [],
+    "features_to_engineer": [],
 }
 
 _LIST_FIELDS = {
     "target_columns", "leakage_risks", "data_quality_findings", "selected_features",
     "dropped_features", "preprocessing_decisions", "model_results", "rejected_ideas",
     "iteration_history", "open_questions", "phase_log",
+    "feature_insights", "important_columns", "multicollinear_groups", "features_to_engineer",
 }
 
 
@@ -113,9 +119,20 @@ def _render(ctx: Dict[str, Any]) -> str:
         bullets(ctx.get("data_quality_findings", [])),
         "",
         "## Features",
+        f"**Important (EDA):** {', '.join(ctx.get('important_columns', [])) or '_(tbd)_'}",
+        "",
         f"**Selected:** {', '.join(ctx.get('selected_features', [])) or '_(tbd)_'}",
         "",
         f"**Dropped:** {', '.join(ctx.get('dropped_features', [])) or '_(tbd)_'}",
+        "",
+        "## EDA findings",
+        ctx.get("eda_findings_summary") or "_(pending)_",
+        "",
+        "## Feature insights",
+        bullets(ctx.get("feature_insights", [])),
+        "",
+        "## Feature engineering ideas",
+        bullets(ctx.get("features_to_engineer", [])),
         "",
         "## Preprocessing decisions",
         bullets(ctx.get("preprocessing_decisions", [])),

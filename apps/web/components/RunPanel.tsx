@@ -14,6 +14,7 @@ export function RunPanel({ project, onResult, onLog }: Props) {
   const [maxIterations, setMaxIterations] = useState(3);
   const [minRel, setMinRel] = useState(0.05);
   const [running, setRunning] = useState(false);
+  const [resume, setResume] = useState(false);
 
   const canRun = !!project && project.csv_paths.length >= 0;
 
@@ -26,6 +27,7 @@ export function RunPanel({ project, onResult, onLog }: Props) {
         enablePriorArt,
         maxIterations,
         minRelImprovement: minRel,
+        resume,
       });
       onResult(r);
       const errCount = r.errors?.length ?? 0;
@@ -71,6 +73,15 @@ export function RunPanel({ project, onResult, onLog }: Props) {
           value={minRel}
           onChange={(e) => setMinRel(Number(e.target.value))}
         />
+      </div>
+      <div className="checkbox">
+        <input
+          type="checkbox"
+          id="resume"
+          checked={resume}
+          onChange={(e) => setResume(e.target.checked)}
+        />
+        <label htmlFor="resume">Resume from last checkpoint (if available)</label>
       </div>
       <button className="btn" disabled={!canRun || running} onClick={run}>
         {running ? "Running…" : "Run Project2Notebook"}

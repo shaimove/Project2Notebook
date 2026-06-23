@@ -10,7 +10,18 @@ from typing import Any, Dict
 import numpy as np
 import pandas as pd
 
-from mcp_servers._mlcommon import is_datetime_like, load_csv, looks_like_id, to_native
+from backend.config import settings
+from mcp_servers._mlcommon import (
+    chunked_duplicate_count,
+    chunked_missing_fractions,
+    csv_load_plan,
+    estimate_row_count,
+    is_datetime_like,
+    load_csv,
+    load_csv_for_analysis,
+    looks_like_id,
+    to_native,
+)
 from mcp_servers.common import MCPServer, serve_fastmcp
 
 server = MCPServer(
@@ -21,35 +32,44 @@ server = MCPServer(
 _S = {"csv_path": {"type": "string", "required": True}}
 
 
-def _load(args: Dict[str, Any]) -> pd.DataFrame:
-    return load_csv(args["csv_path"])
+def _load(args: Dict[str, Any], for_analysis: bool = True) -> pd.DataFrame:
+    target = (args.get("spec") or {}).get("targets") or []
+    target_col = target[0] if target else args.get("target")
+    return load_csv(args["csv_path"], for_analysis=for_analysis, target_column=target_col)
 
 
 @server.tool("Load a CSV dataset and return basic shape and column names.", _S)
 def load_dataset(args: Dict[str, Any]) -> Dict[str, Any]:
-    df = _load(args)
+    plan = csv_load_plan(args["csv_path"])
+    header = pd.read_csv(args["csv_path"], nrows=0)
     return {
-        "n_rows": int(df.shape[0]),
-        "n_cols": int(df.shape[1]),
-        "columns": list(df.columns),
-        "dtypes": {c: str(df[c].dtype) for c in df.columns},
+        "n_rows": plan["estimated_rows"],
+        "n_cols": int(len(header.columns)),
+        "columns": list(header.columns),
+        "dtypes": {c: str(header[c].dtype) for c in header.columns},
+        "file_bytes": plan["file_bytes"],
+        "sampled_for_analysis": plan["use_analysis_sample"],
     }
 
 
 @server.tool("Full per-column profile of the dataset.", _S)
 def profile_dataset(args: Dict[str, Any]) -> Dict[str, Any]:
-    df = _load(args)
+    plan = csv_load_plan(args["csv_path"])
+    df = _load(args, for_analysis=True)
+    n_full = plan["estimated_rows"] or len(df)
+    miss_exact = chunked_missing_fractions(args["csv_path"]) if plan["use_chunked_stats"] else None
     n = len(df)
     cols = []
     for c in df.columns:
         s = df[c]
-        n_missing = int(s.isna().sum())
+        pct_missing = miss_exact.get(c, float(s.isna().mean())) if miss_exact else float(s.isna().mean())
+        n_missing = int(round(pct_missing * n_full))
         n_unique = int(s.nunique(dropna=True))
         profile: Dict[str, Any] = {
             "name": c,
             "dtype": str(s.dtype),
             "n_missing": n_missing,
-            "pct_missing": round(n_missing / n, 4) if n else 0.0,
+            "pct_missing": round(pct_missing, 4),
             "n_unique": n_unique,
             "is_constant": n_unique <= 1,
             "is_near_constant": (n_unique <= 1)
@@ -66,7 +86,13 @@ def profile_dataset(args: Dict[str, Any]) -> Dict[str, Any]:
         else:
             profile["cardinality"] = n_unique
         cols.append(profile)
-    return {"n_rows": n, "n_cols": int(df.shape[1]), "columns": cols}
+    return {
+        "n_rows": n_full,
+        "n_cols": int(df.shape[1]),
+        "analysis_sample_rows": n,
+        "sampled_for_analysis": plan["use_analysis_sample"],
+        "columns": cols,
+    }
 
 
 @server.tool("Validate the dataset against an expected set of columns.", {
@@ -84,14 +110,22 @@ def validate_schema(args: Dict[str, Any]) -> Dict[str, Any]:
 
 @server.tool("Summarise missing values per column.", _S)
 def summarize_missing_values(args: Dict[str, Any]) -> Dict[str, Any]:
-    df = _load(args)
-    n = len(df)
-    miss = {c: int(df[c].isna().sum()) for c in df.columns}
+    plan = csv_load_plan(args["csv_path"])
+    if plan["use_chunked_stats"]:
+        pct = chunked_missing_fractions(args["csv_path"])
+        n = plan["estimated_rows"]
+        miss = {c: int(round(p * n)) for c, p in pct.items()}
+    else:
+        df = _load(args, for_analysis=False)
+        n = len(df)
+        miss = {c: int(df[c].isna().sum()) for c in df.columns}
+        pct = {c: (v / n if n else 0.0) for c, v in miss.items()}
+
     return {
         "per_column": miss,
-        "per_column_pct": {c: round(v / n, 4) if n else 0.0 for c, v in miss.items()},
+        "per_column_pct": {c: round(p, 4) for c, p in pct.items()},
         "columns_with_missing": [c for c, v in miss.items() if v > 0],
-        "near_empty_columns": [c for c, v in miss.items() if n and v / n > 0.6],
+        "near_empty_columns": [c for c, p in pct.items() if p > settings.missing_drop_threshold],
     }
 
 
@@ -118,8 +152,13 @@ def detect_invalid_values(args: Dict[str, Any]) -> Dict[str, Any]:
 
 @server.tool("Count duplicate rows.", _S)
 def detect_duplicates(args: Dict[str, Any]) -> Dict[str, Any]:
-    df = _load(args)
-    return {"n_duplicate_rows": int(df.duplicated().sum())}
+    plan = csv_load_plan(args["csv_path"])
+    if plan["use_chunked_stats"]:
+        n_dup = chunked_duplicate_count(args["csv_path"])
+    else:
+        df = _load(args, for_analysis=False)
+        n_dup = int(df.duplicated().sum())
+    return {"n_duplicate_rows": n_dup}
 
 
 @server.tool("Inspect the target distribution.", {**_S, "target": {"type": "string", "required": True}})

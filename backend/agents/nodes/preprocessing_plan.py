@@ -18,6 +18,7 @@ from backend.mcp_client.client import MCPClient
 from backend.schemas.experiment import PreprocessingPlan, SplitReport
 from backend.schemas.validation import validate_model
 from backend.services import artifact_store, memory
+from backend.services.plotly_viz import generate_split_target_plotly
 
 PP = "preprocessing-tools"
 
@@ -31,9 +32,22 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
 
     profile = {"columns": audit.get("columns", [])}
     plan_raw = client.call_tool_required(
-        PP, "create_preprocessing_plan", {"profile": profile, "spec": spec}
+        PP, "create_preprocessing_plan", {
+            "profile": profile,
+            "spec": spec,
+            "eda_findings": state.get("eda_findings") or {},
+        }
     )
     plan = validate_model(PreprocessingPlan, plan_raw, context="preprocessing plan").model_dump()
+
+    dq = state.get("data_quality_report") or {}
+    modeling_features = dq.get("modeling_features") or state.get("modeling_features") or []
+    if modeling_features:
+        target_col = (spec.get("targets") or [None])[0]
+        plan["keep_columns"] = [c for c in modeling_features if c != target_col]
+        plan.setdefault("notes", []).append(
+            f"Keep columns aligned with Data Quality selection ({len(plan['keep_columns'])} features)."
+        )
 
     leak = client.call_tool(PP, "check_preprocessing_leakage", {"plan": plan, "spec": spec})
     plan.setdefault("notes", []).append(
@@ -47,6 +61,15 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
     shapes = client.call_tool_required(PP, "transform_valid_test", {"project_id": project_id})
     split_raw["feature_count"] = shapes.get("n_features")
     split_report = validate_model(SplitReport, split_raw, context="split report").model_dump()
+
+    target = (spec.get("targets") or [None])[0] or audit.get("target")
+    scaling = plan.get("scaling_strategy") or "standard"
+    split_viz = generate_split_target_plotly(
+        project_id, csv_path, target, split_report, scaling_method=scaling,
+    ) if target else {"ok": False}
+    if split_viz.get("ok"):
+        state["split_plotly_html"] = split_viz.get("html_name")
+        state["split_ratios"] = split_viz.get("ratios")
 
     artifact_store.write_json(project_id, "preprocessing_plan.json", plan)
     artifact_store.write_json(project_id, "split_report.json", split_report)
@@ -77,7 +100,7 @@ def _render_md(plan: dict, split: dict) -> str:
         return "\n".join(f"- {i}" for i in (items or [])) or "- (none)"
 
     return "\n".join([
-        "# Preprocessing Decisions",
+        "# Split Data & Scaling Decisions",
         "",
         f"- **Drop columns:** {', '.join(plan.get('drop_columns', [])) or '(none)'}",
         f"- **Keep columns:** {', '.join(plan.get('keep_columns', [])) or '(none)'}",

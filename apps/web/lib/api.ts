@@ -32,6 +32,8 @@ export interface ToolCall {
 
 export interface RunResponse {
   project_id: string;
+  run_id: string;
+  resumed_from_step?: number | null;
   status: string;
   timeline: TimelineItem[];
   tool_calls: ToolCall[];
@@ -79,7 +81,13 @@ export async function uploadFile(
 
 export async function runPipeline(
   projectId: string,
-  opts: { enablePriorArt: boolean; maxIterations: number; minRelImprovement: number }
+  opts: {
+    enablePriorArt: boolean;
+    maxIterations: number;
+    minRelImprovement: number;
+    resume?: boolean;
+    fromStep?: number;
+  }
 ): Promise<RunResponse> {
   const res = await fetch(`${API_BASE}/api/run`, {
     method: "POST",
@@ -89,6 +97,8 @@ export async function runPipeline(
       enable_prior_art: opts.enablePriorArt,
       max_iterations: opts.maxIterations,
       min_relative_improvement: opts.minRelImprovement,
+      resume: opts.resume ?? false,
+      from_step: opts.fromStep,
     }),
   });
   return jsonOrThrow(res);

@@ -5,11 +5,12 @@ Run with:  uvicorn backend.main:app --reload --port 8000
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from backend.api import chat, notebook, projects, run_pipeline, upload
 from backend.config import settings
@@ -76,8 +77,17 @@ app.include_router(notebook.router)
 app.include_router(chat.router)
 
 
+_DASHBOARD_HTML = Path(__file__).resolve().parent / "web" / "dashboard.html"
+
+
 @app.get("/")
-def root() -> dict:
+def dashboard() -> FileResponse:
+    """Serve the self-contained single-page dashboard (no Node build required)."""
+    return FileResponse(_DASHBOARD_HTML, media_type="text/html")
+
+
+@app.get("/api/info")
+def info() -> dict:
     return {
         "name": "Project2Notebook",
         "status": "ok",

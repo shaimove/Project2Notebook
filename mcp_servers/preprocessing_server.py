@@ -71,11 +71,12 @@ def _feature_names_out(ct: ColumnTransformer, numeric: List[str], categorical: L
         return names
 
 
-@server.tool("Create a heuristic preprocessing plan from profile + spec.", {
-    "profile": {"type": "object"}, "spec": {"type": "object"}})
+@server.tool("Create a heuristic preprocessing plan from profile + spec + EDA findings.", {
+    "profile": {"type": "object"}, "spec": {"type": "object"}, "eda_findings": {"type": "object"}})
 def create_preprocessing_plan(args: Dict[str, Any]) -> Dict[str, Any]:
     profile = args.get("profile") or {}
     spec = args.get("spec") or {}
+    eda = args.get("eda_findings") or {}
     targets: List[str] = spec.get("targets") or []
     target = targets[0] if targets else None
     leakage_cols = set()
@@ -89,7 +90,6 @@ def create_preprocessing_plan(args: Dict[str, Any]) -> Dict[str, Any]:
         name = col["name"]
         if name == target:
             continue
-        # Drop ID-like / constant / near-empty columns.
         if col.get("is_constant") or col.get("pct_missing", 0) > 0.6:
             drop.append(name)
             continue
@@ -97,14 +97,10 @@ def create_preprocessing_plan(args: Dict[str, Any]) -> Dict[str, Any]:
         if lname == "id" or lname.endswith("_id"):
             drop.append(name)
             continue
-        # Drop leakage-prone columns (future/post-outcome info) — critical.
         if any(t in lname for t in leak_terms) or lname in risk_text:
             drop.append(name)
             leakage_cols.add(f"Dropped leakage-prone column '{name}'.")
             continue
-        # Drop raw date/time columns from the feature matrix (they drive the
-        # split, and one-hot encoding raw dates is not useful). Engineering
-        # calendar/lag features from them is left as a documented next step.
         if any(t in lname for t in ("timestamp", "date")) or lname == "time":
             drop.append(name)
             continue
@@ -119,16 +115,47 @@ def create_preprocessing_plan(args: Dict[str, Any]) -> Dict[str, Any]:
             if col.get("pct_missing", 0) > 0:
                 missing_strategy[name] = "most_frequent"
 
+    # Merge EDA Review recommendations (never un-drop leakage-prone columns).
+    eda_drop = set(eda.get("features_to_drop") or [])
+    eda_watch = set(eda.get("features_to_watch") or [])
+    eda_important = set(eda.get("important_columns") or [])
+    for col in eda_drop:
+        if col == target:
+            continue
+        if col in keep:
+            keep.remove(col)
+        if col not in drop:
+            drop.append(col)
+    for col in eda_important:
+        if col in drop and col not in eda_drop:
+            drop.remove(col)
+            if col not in keep:
+                keep.append(col)
+
+    for eng in eda.get("features_to_engineer") or []:
+        base = eng.get("base_column") or eng.get("base")
+        transform = eng.get("transform", "engineer")
+        if base:
+            fe.append(f"{transform}({base}): {eng.get('rationale', 'from EDA review')}")
+
     if spec.get("has_time_component"):
         fe.append("Add lag/rolling features of the target where appropriate (y(t-1), rolling medians).")
         lag = ["y_lag_1", "y_rolling_median_5"]
 
+    notes: List[str] = []
+    if eda.get("summary"):
+        notes.append(f"EDA review: {eda.get('summary', '')[:200]}")
+    if eda_watch:
+        notes.append("Watch columns: " + ", ".join(sorted(eda_watch)[:10]))
+    for imp in eda.get("preprocessing_implications") or []:
+        notes.append(str(imp))
+
     plan = {
-        "drop_columns": drop,
-        "keep_columns": keep,
+        "drop_columns": sorted(set(drop)),
+        "keep_columns": sorted(set(keep)),
         "feature_engineering": fe,
-        "numeric_columns": numeric,
-        "categorical_columns": categorical,
+        "numeric_columns": [c for c in numeric if c in keep],
+        "categorical_columns": [c for c in categorical if c in keep],
         "missing_value_strategy": missing_strategy,
         "encoding_strategy": "one_hot",
         "scaling_strategy": "standard",
@@ -139,7 +166,7 @@ def create_preprocessing_plan(args: Dict[str, Any]) -> Dict[str, Any]:
         ]
         + list(leakage_cols),
         "lag_features": lag,
-        "notes": [],
+        "notes": notes,
     }
     return plan
 

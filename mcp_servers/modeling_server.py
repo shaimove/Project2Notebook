@@ -115,6 +115,36 @@ def _evaluate(model, X, y, task: str) -> Dict[str, float]:
     return metrics
 
 
+def _human_display_name(name: str, model, task: str, y: np.ndarray) -> str:
+    """Readable model label for the dashboard (e.g. RBF SVM, not svm)."""
+    is_clf = _task_is_classification(task, y)
+    if name == "dummy":
+        return "Majority Class Baseline" if is_clf else "Mean Baseline"
+    if name == "linear":
+        return "Logistic Regression" if is_clf else "Ridge Regression"
+    if name == "tree":
+        depth = getattr(model, "max_depth", None)
+        return f"Decision Tree (max_depth={depth})" if depth else "Decision Tree"
+    if name == "random_forest":
+        return "Random Forest"
+    if name == "boosting":
+        cls = type(model).__name__
+        if "XGB" in cls:
+            return "XGBoost"
+        return "HistGradient Boosting"
+    if name == "svm":
+        kernel = getattr(model, "kernel", "rbf")
+        labels = {
+            "linear": "Linear SVM",
+            "poly": "Polynomial SVM",
+            "rbf": "RBF SVM",
+            "sigmoid": "Sigmoid SVM",
+            "precomputed": "Precomputed SVM",
+        }
+        return labels.get(kernel, "SVM")
+    return type(model).__name__
+
+
 def _builder(name: str, task: str, y: np.ndarray):
     is_clf = _task_is_classification(task, y)
     if name == "dummy":
@@ -175,6 +205,7 @@ def _train_one(args: Dict[str, Any], name: str, family: str) -> Dict[str, Any]:
 
     return {
         "model_name": name,
+        "display_name": _human_display_name(name, model, task, ytr),
         "family": family,
         "train_metrics": train_m,
         "valid_metrics": valid_m,
@@ -249,6 +280,23 @@ def evaluate_model(args: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _legacy_display_name(result: Dict[str, Any]) -> str:
+    """Fallback labels when ``display_name`` was stripped (older runs)."""
+    slug = str(result.get("model_name") or "")
+    dn = result.get("display_name")
+    if dn and dn != slug:
+        return str(dn)
+    defaults = {
+        "dummy": "Majority Class Baseline",
+        "linear": "Logistic Regression",
+        "tree": "Decision Tree (max_depth=6)",
+        "random_forest": "Random Forest",
+        "boosting": "XGBoost",
+        "svm": "RBF SVM",
+    }
+    return defaults.get(slug, slug)
+
+
 @server.tool("Compare a list of model results into a ranked table.", {
     "results": {"type": "array", "required": True}})
 def compare_models(args: Dict[str, Any]) -> Dict[str, Any]:
@@ -261,6 +309,7 @@ def compare_models(args: Dict[str, Any]) -> Dict[str, Any]:
     for r in results:
         rows.append({
             "model": r.get("model_name"),
+            "display_name": _legacy_display_name(r),
             "family": r.get("family"),
             "valid_score": r.get("valid_score"),
             "train_valid_gap": r.get("train_valid_gap"),

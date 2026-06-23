@@ -37,6 +37,7 @@ class ModelResult(BaseModel):
     """Output of a modeling-tools train_* call."""
 
     model_name: str
+    display_name: Optional[str] = None
     family: str = ""
     train_metrics: Dict[str, float] = Field(default_factory=dict)
     valid_metrics: Dict[str, float] = Field(default_factory=dict)
@@ -50,6 +51,7 @@ class ModelResult(BaseModel):
 
 class ModelComparisonRow(BaseModel):
     model: str
+    display_name: Optional[str] = None
     family: Optional[str] = None
     valid_score: Optional[float] = None
     train_valid_gap: Optional[float] = None

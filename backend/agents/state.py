@@ -13,6 +13,8 @@ class DataScientist(TypedDict, total=False):
     project_id: str
     project_document_path: str
     csv_paths: List[str]
+    original_csv_paths: List[str]
+    cleaned_csv_path: Optional[str]
     pdf_paths: List[str]
 
     # Run configuration
@@ -23,10 +25,19 @@ class DataScientist(TypedDict, total=False):
     # Phase artifacts
     project_spec: Optional[Dict[str, Any]]
     prior_art_report: Optional[Dict[str, Any]]
+    data_quality_report: Optional[Dict[str, Any]]
     data_audit_report: Optional[Dict[str, Any]]
     eda_plan: Optional[Dict[str, Any]]
     eda_report: Optional[str]
     eda_artifacts: Optional[Dict[str, Any]]
+    eda_findings: Optional[Dict[str, Any]]
+    eda_findings_report: Optional[Dict[str, Any]]
+    eda_plotly_html: Optional[str]
+    eda_plotly_conclusions: Optional[List[str]]
+    split_plotly_html: Optional[str]
+    split_ratios: Optional[Dict[str, Any]]
+    modeling_features: List[str]
+    excluded_columns: List[str]
     preprocessing_plan: Optional[Dict[str, Any]]
     split_report: Optional[Dict[str, Any]]
 
@@ -49,6 +60,7 @@ class DataScientist(TypedDict, total=False):
     notebook_path: Optional[str]
 
     # Transparency
+    run_id: Optional[str]
     tool_calls: List[Dict[str, Any]]
     timeline: List[Dict[str, Any]]
     errors: List[Dict[str, Any]]
@@ -67,16 +79,27 @@ def new_state(
         project_id=project_id,
         project_document_path=project_document_path,
         csv_paths=csv_paths,
+        original_csv_paths=[],
+        cleaned_csv_path=None,
         pdf_paths=pdf_paths,
         enable_prior_art=enable_prior_art,
         max_iterations=max_iterations,
         min_relative_improvement=min_relative_improvement,
         project_spec=None,
         prior_art_report=None,
+        data_quality_report=None,
         data_audit_report=None,
         eda_plan=None,
         eda_report=None,
         eda_artifacts=None,
+        eda_findings=None,
+        eda_findings_report=None,
+        eda_plotly_html=None,
+        eda_plotly_conclusions=None,
+        split_plotly_html=None,
+        split_ratios=None,
+        modeling_features=[],
+        excluded_columns=[],
         preprocessing_plan=None,
         split_report=None,
         baseline_results=None,
@@ -91,6 +114,7 @@ def new_state(
         final_test_report=None,
         final_test_report_obj=None,
         notebook_path=None,
+        run_id=None,
         tool_calls=[],
         timeline=[],
         errors=[],

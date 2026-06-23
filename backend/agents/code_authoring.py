@@ -26,6 +26,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from backend.config import settings
 from backend.mcp_client.client import MCPClient
 from backend.services.llm import llm
 
@@ -121,7 +122,8 @@ def _strip_fences(text: str) -> str:
 # ---------------------------------------------------------------------------
 # Code templates
 # ---------------------------------------------------------------------------
-_HEADER = """import json, warnings, os
+def _code_header(csv_path: str) -> str:
+    return f"""import json, warnings, os
 warnings.filterwarnings("ignore")
 import numpy as np
 import pandas as pd
@@ -131,12 +133,24 @@ import matplotlib.pyplot as plt
 os.makedirs("plots", exist_ok=True)
 os.makedirs("tables", exist_ok=True)
 df = pd.read_csv({csv_path!r})
+MAX_EDA_ROWS = {settings.csv_analysis_max_rows}
+LARGE_CSV_BYTES = {settings.large_csv_bytes}
+if os.path.getsize({csv_path!r}) > LARGE_CSV_BYTES:
+    parts = []
+    for chunk in pd.read_csv({csv_path!r}, chunksize={settings.csv_chunk_rows}):
+        take = min(len(chunk), max(1, MAX_EDA_ROWS // 20))
+        parts.append(chunk.sample(n=take, random_state=42) if len(chunk) > take else chunk)
+    df = pd.concat(parts, ignore_index=True)
+    if len(df) > MAX_EDA_ROWS:
+        df = df.sample(MAX_EDA_ROWS, random_state=42)
+elif len(df) > MAX_EDA_ROWS:
+    df = df.sample(MAX_EDA_ROWS, random_state=42)
 """
 
 
 def build_eda_code(csv_path: str, target: Optional[str], numeric_cols: List[str],
                    time_col: Optional[str]) -> str:
-    parts = [_HEADER.format(csv_path=csv_path)]
+    parts = [_code_header(csv_path)]
     parts.append(f"TARGET = {target!r}\nNUMERIC = {json.dumps(numeric_cols)}\nTIME_COL = {time_col!r}\n")
     parts.append(
         "summary = {}\n"
@@ -176,8 +190,9 @@ def build_eda_code(csv_path: str, target: Optional[str], numeric_cols: List[str]
         "# 4) feature-target relationships\n"
         "if TARGET and TARGET in df.columns:\n"
         "    is_class = (not pd.api.types.is_numeric_dtype(df[TARGET])) or df[TARGET].nunique() <= 15\n"
+        "    n_classes = int(df[TARGET].nunique(dropna=True))\n"
         "    fnum = [c for c in num if c != TARGET][:6]\n"
-        "    if fnum:\n"
+        "    if fnum and (not is_class or n_classes <= 20):\n"
         "        ncols=3; nrows=(len(fnum)+ncols-1)//ncols\n"
         "        fig, axes = plt.subplots(nrows, ncols, figsize=(4*ncols,3*nrows)); axes=np.array(axes).reshape(-1)\n"
         "        for i,c in enumerate(fnum):\n"
@@ -189,10 +204,14 @@ def build_eda_code(csv_path: str, target: Optional[str], numeric_cols: List[str]
         "            ax.set_title(c, fontsize=9)\n"
         "        for j in range(len(fnum), len(axes)): axes[j].axis('off')\n"
         "        plt.tight_layout(); plt.savefig('plots/feature_target.png', dpi=110); plt.close()\n"
+        "    elif fnum and is_class:\n"
+        "        summary['skipped_feature_target_plot'] = f'high cardinality target ({n_classes} classes)'\n"
     )
     parts.append(
         "# 5) correlation\n"
         "numdf = df.select_dtypes(include=[np.number])\n"
+        "if numdf.shape[1] > 30:\n"
+        "    numdf = numdf.iloc[:, :30]\n"
         "if numdf.shape[1] >= 2:\n"
         "    corr = numdf.corr(); corr.to_csv('tables/correlation.csv')\n"
         "    plt.figure(figsize=(1+0.6*corr.shape[1],1+0.6*corr.shape[1]))\n"
@@ -203,7 +222,7 @@ def build_eda_code(csv_path: str, target: Optional[str], numeric_cols: List[str]
     parts.append(
         "# 6) outliers (IQR)\n"
         "rows=[]\n"
-        "for c in numdf.columns:\n"
+        "for c in list(numdf.columns)[:30]:\n"
         "    s=numdf[c].dropna()\n"
         "    if len(s)<5: continue\n"
         "    q1,q3=s.quantile(0.25),s.quantile(0.75); iqr=q3-q1; lo,hi=q1-1.5*iqr,q3+1.5*iqr\n"
@@ -229,7 +248,7 @@ def build_preprocessing_code(csv_path: str, plan: Dict[str, Any], spec: Dict[str
     keep = [c for c in plan.get("keep_columns", [])]
     strategy = spec.get("recommended_split", "random")
     stratify = strategy == "stratified"
-    return _HEADER.format(csv_path=csv_path) + f"""
+    return _code_header(csv_path) + f"""
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
@@ -272,7 +291,7 @@ def build_modeling_code(csv_path: str, plan: Dict[str, Any], spec: Dict[str, Any
     stratify = strategy == "stratified"
     task = spec.get("ml_task_type", "binary_classification")
     is_clf = task in ("binary_classification", "multiclass_classification", "anomaly_detection")
-    return _HEADER.format(csv_path=csv_path) + f"""
+    return _code_header(csv_path) + f"""
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer

@@ -52,11 +52,19 @@ class Settings:
             os.getenv("MIN_RELATIVE_IMPROVEMENT", "0.05")
         )
 
-        # Code runner
-        self.code_timeout_seconds: int = int(os.getenv("CODE_TIMEOUT_SECONDS", "120"))
+        # Code runner — large CSV EDA scripts need more time
+        self.code_timeout_seconds: int = int(os.getenv("CODE_TIMEOUT_SECONDS", "300"))
 
-        # Upload limits
-        self.max_upload_bytes: int = int(os.getenv("MAX_UPLOAD_BYTES", str(50 * 1024 * 1024)))
+        # Upload limits (default supports CSV files up to ~120 MB with headroom)
+        self.max_upload_bytes: int = int(
+            os.getenv("MAX_UPLOAD_BYTES", str(150 * 1024 * 1024))
+        )
+
+        # Large CSV handling
+        self.large_csv_bytes: int = int(os.getenv("LARGE_CSV_BYTES", str(25 * 1024 * 1024)))
+        self.csv_analysis_max_rows: int = int(os.getenv("CSV_ANALYSIS_MAX_ROWS", "100000"))
+        self.csv_chunk_rows: int = int(os.getenv("CSV_CHUNK_ROWS", "50000"))
+        self.missing_drop_threshold: float = float(os.getenv("MISSING_DROP_THRESHOLD", "0.25"))
 
         self._ensure_dirs()
 

@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Project2Notebook</title>
+<style>
+  :root {
+    --bg: #0b1020; --panel: #131a2e; --panel-2: #1b2440; --border: #283250;
+    --text: #e7ecf6; --muted: #9aa6c4; --accent: #5b8def; --accent-2: #6ee7b7;
+    --warn: #fbbf24; --err: #f87171; --ok: #34d399;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px; min-height: 100vh;
+  }
+  .app { display: flex; flex-direction: column; height: 100vh; padding: 14px; gap: 10px; overflow: hidden; }
+  .header { flex-shrink: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px; background: linear-gradient(90deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--border); border-radius: 12px;
+  }
+  .header h1 { font-size: 18px; margin: 0; }
+  .header .sub { color: var(--muted); font-size: 12px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 10px; }
+  .card h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 12px 0 6px; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .muted { color: var(--muted); } .small { font-size: 12px; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .pill.ok { background: rgba(52,211,153,0.15); color: var(--ok); }
+  .pill.err { background: rgba(248,113,113,0.15); color: var(--err); }
+  .pill.run { background: rgba(91,141,239,0.15); color: var(--accent); }
+  .pill.warn { background: rgba(251,191,36,0.15); color: var(--warn); }
+
+  #setup-card { flex-shrink: 0; padding: 10px 14px; }
+  .setup-row {
+    display: grid;
+    grid-template-columns: minmax(110px, 0.85fr) minmax(140px, 1.1fr) minmax(140px, 1.1fr) minmax(140px, 1.1fr) auto;
+    gap: 10px;
+    align-items: end;
+  }
+  @media (max-width: 1100px) {
+    .setup-row { grid-template-columns: 1fr 1fr; }
+    .setup-actions { grid-column: 1 / -1; }
+  }
+  .setup-actions { display: flex; align-items: center; gap: 8px; padding-bottom: 2px; }
+  @media (max-width: 900px) { .body { grid-template-columns: 1fr !important; } }
+  .field { margin-bottom: 0; min-width: 0; }
+  .field label { display: block; color: var(--muted); margin-bottom: 4px; font-size: 11px; line-height: 1.25; }
+  .field input[type=text] { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); }
+  .field input[type=number] { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); }
+  input[type=file] { color: var(--muted); font-size: 11px; width: 100%; max-width: 100%; }
+  .file-chip { font-size: 11px; color: var(--ok); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .btn { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 9px 18px; font-weight: 600; cursor: pointer; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-link { background: none; border: none; color: var(--accent); cursor: pointer; padding: 0; font-size: 12px; }
+  .checkbox { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+  .setup-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .setup-header h2 { margin: 0; }
+  .advanced { margin: 10px 0; padding: 10px; border: 1px dashed var(--border); border-radius: 8px; }
+
+  .body { display: grid; grid-template-columns: 1fr 200px; gap: 14px; align-items: stretch; flex: 1; min-height: 0; }
+  .results {
+    display: flex; flex-direction: column;
+    min-height: 0;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    overflow: hidden;
+  }
+  .results-head { padding: 12px 14px 0; }
+  .results-head h2 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+  .tab-bar { display: flex; flex-wrap: wrap; gap: 4px; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--panel-2); }
+  .tab { background: transparent; border: 1px solid transparent; color: var(--muted); border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .tab:hover { color: var(--text); border-color: var(--border); }
+  .tab.active { background: var(--panel); color: var(--accent); border-color: var(--border); }
+  .tab-panel { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 14px 24px; }
+  .sidebar { display: flex; flex-direction: column; min-height: 0; }
+  .scroll { overflow-y: auto; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  tr.best td { background: rgba(110,231,183,0.08); }
+
+  .metrics { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin: 8px 0; }
+  .section { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
+  .section-head { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding: 10px 12px; background: transparent; border: none; color: var(--text); cursor: pointer; text-align: left; }
+  .section-step { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 2px; }
+  .section-title { font-weight: 600; font-size: 13px; }
+  .section-body { padding: 0 12px 12px; border-top: 1px solid var(--border); }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .plot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .plot-grid img { width: 100%; border-radius: 8px; border: 1px solid var(--border); background: #fff; }
+  pre.md { white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, Menlo, monospace; font-size: 12px; line-height: 1.5; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
+  ul.tight { margin: 4px 0; padding-left: 18px; }
+  ul.tight li { margin-bottom: 4px; }
+  .banner { font-size: 12px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel-2); color: var(--muted); margin-top: 8px; }
+  .banner.err { border-color: rgba(248,113,113,0.4); color: var(--err); background: rgba(248,113,113,0.08); }
+  .error-card { background: var(--panel-2); border: 1px solid rgba(248,113,113,0.35); border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+  .error-card h3 { margin: 0 0 8px; color: var(--err); font-size: 13px; text-transform: none; letter-spacing: 0; }
+  .spinner { display:inline-block; width:14px; height:14px; border:2px solid var(--border); border-top-color: var(--accent); border-radius:50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  a { color: var(--accent); }
+  .plotly-frame { width: 100%; min-height: 640px; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div>
+      <h1>Project2Notebook</h1>
+      <div class="sub">Agentic ML engineer · brief + data → reproducible notebook · single dashboard</div>
+    </div>
+    <div class="row">
+      <span id="run-indicator"></span>
+      <span class="pill run">14-step pipeline</span>
+      <span class="pill ok">Leakage-aware</span>
+    </div>
+  </div>
+
+  <!-- SETUP -->
+  <div class="card" id="setup-card">
+    <div class="setup-header">
+      <h2>Project setup</h2>
+      <button class="btn-link" id="toggle-setup" style="display:none">Hide inputs</button>
+    </div>
+    <div id="setup-fields">
+      <div class="setup-row">
+        <div class="field">
+          <label>Project name</label>
+          <input type="text" id="name" value="ML Project" />
+        </div>
+        <div class="field">
+          <label>Task brief — .md, .txt, .pdf, .doc, .docx</label>
+          <input type="file" id="task-file" accept=".md,.txt,.pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+          <div class="file-chip" id="task-chip"></div>
+        </div>
+        <div class="field">
+          <label>Primary dataset — one CSV</label>
+          <input type="file" id="csv-file" accept=".csv" />
+          <div class="file-chip" id="csv-chip"></div>
+        </div>
+        <div class="field">
+          <label>Additional data — CSV / PDF</label>
+          <input type="file" id="extra-files" accept=".csv,.pdf" multiple />
+          <div class="file-chip" id="extra-chip"></div>
+        </div>
+        <div class="setup-actions">
+          <button class="btn" id="start-btn" disabled>Start</button>
+        </div>
+      </div>
+      <div class="row" style="margin-top:6px; gap:12px">
+        <button class="btn-link muted" id="toggle-advanced">Show advanced options</button>
+        <span id="start-status" class="small muted"></span>
+      </div>
+      <div class="advanced" id="advanced" style="display:none">
+        <div class="checkbox"><input type="checkbox" id="prior-art" checked /><label for="prior-art">Enable Prior Art Agent</label></div>
+        <div class="field"><label>Max iterations</label><input type="number" id="max-iter" min="0" max="3" value="3" /></div>
+        <div class="field"><label>Min relative improvement (stop rule)</label><input type="number" id="min-rel" step="0.01" value="0.05" /></div>
+      </div>
+    </div>
+    <div id="setup-summary" class="small muted" style="display:none"></div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+    <div class="results">
+      <div class="results-head">
+        <h2>Results</h2>
+        <p class="small muted" id="results-subtitle" style="margin:4px 0 0">
+          Select your task brief and primary CSV, then click Start.
+        </p>
+      </div>
+      <div class="tab-bar" id="tab-bar"></div>
+      <div class="tab-panel" id="tab-panel">
+        <p class="muted">Results will appear here across tabs: data cleaning, EDA, preprocessing, models, and conclusions.</p>
+      </div>
+    </div>
+    <aside class="sidebar">
+      <div class="card" style="flex:1; min-height:0; display:flex; flex-direction:column">
+        <h2>Activity log</h2>
+        <div class="scroll small mono" id="log" style="flex:1; min-height:0; overflow-y:auto"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const API = "";
+const state = { project: null, result: null, running: false, activeTab: "overview" };
+
+const TABS = [
+  ["overview", "Overview"],
+  ["quality", "Data Quality"],
+  ["eda", "EDA"],
+  ["preprocessing", "Split Data"],
+  ["models", "Models"],
+  ["conclusions", "Conclusions"],
+  ["errors", "Errors"],
+  ["pipeline", "Pipeline Log"],
+];
+
+// ---------- helpers ----------
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmt = (v) => (v === null || v === undefined ? "—" : (typeof v === "number" ? v.toFixed(4) : esc(v)));
+const MODEL_DISPLAY = {
+  dummy: "Majority Class Baseline",
+  linear: "Logistic Regression",
+  tree: "Decision Tree (max_depth=6)",
+  random_forest: "Random Forest",
+  boosting: "XGBoost",
+  svm: "RBF SVM",
+};
+function modelDisplayName(m) {
+  const slug = m?.model || "";
+  const dn = m?.display_name;
+  if (dn && dn !== slug) return dn;
+  return MODEL_DISPLAY[slug] || dn || slug;
+}
+function log(msg) {
+  const el = $("log");
+  const line = document.createElement("div");
+  line.className = "muted";
+  line.style.marginBottom = "4px";
+  line.textContent = `${new Date().toLocaleTimeString()} · ${msg}`;
+  el.prepend(line);
+}
+function mdToHtml(text) {
+  if (!text) return '<p class="muted small">(not available)</p>';
+  const lines = String(text).split("\n");
+  let html = "", inList = false, inCode = false, code = [];
+  const inline = (s) => esc(s).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/`([^`]+)`/g, '<code class="mono" style="color:var(--accent-2)">$1</code>');
+  for (const ln of lines) {
+    if (ln.startsWith("```")) {
+      if (inCode) { html += `<pre class="md">${esc(code.join("\n"))}</pre>`; code = []; inCode = false; }
+      else { inCode = true; }
+      continue;
+    }
+    if (inCode) { code.push(ln); continue; }
+    if (/^#{1,6}\s/.test(ln)) { if (inList) { html += "</ul>"; inList = false; } html += `<h3 style="margin:8px 0 4px">${inline(ln.replace(/^#+\s/, ""))}</h3>`; continue; }
+    if (/^\s*[-*]\s/.test(ln)) { if (!inList) { html += '<ul class="tight">'; inList = true; } html += `<li>${inline(ln.replace(/^\s*[-*]\s/, ""))}</li>`; continue; }
+    if (inList) { html += "</ul>"; inList = false; }
+    if (ln.trim() === "") continue;
+    html += `<p style="margin:4px 0">${inline(ln)}</p>`;
+  }
+  if (inList) html += "</ul>";
+  if (inCode) html += `<pre class="md">${esc(code.join("\n"))}</pre>`;
+  return html;
+}
+function tags(items, empty) {
+  if (!items || !items.length) return `<p class="muted small">${empty || "None"}</p>`;
+  return `<div class="tags">${items.map((i) => `<span class="pill run">${esc(i)}</span>`).join("")}</div>`;
+}
+
+// ---------- API ----------
+async function jsonOrThrow(res) {
+  if (!res.ok) { const t = await res.text(); throw new Error(`${res.status}: ${t}`); }
+  return res.json();
+}
+async function createProject(name) {
+  return jsonOrThrow(await fetch(`${API}/api/projects`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) }));
+}
+async function uploadFile(projectId, kind, file) {
+  const form = new FormData();
+  form.append("project_id", projectId);
+  form.append("file", file);
+  return jsonOrThrow(await fetch(`${API}/api/upload/${kind}`, { method: "POST", body: form }));
+}
+async function runPipeline(projectId, opts) {
+  return jsonOrThrow(await fetch(`${API}/api/run`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ project_id: projectId, enable_prior_art: opts.priorArt, max_iterations: opts.maxIter, min_relative_improvement: opts.minRel, resume: false }),
+  }));
+}
+
+// ---------- file selection ----------
+let taskFile = null, csvFile = null, extraFiles = [];
+$("task-file").addEventListener("change", (e) => { taskFile = e.target.files[0] || null; $("task-chip").textContent = taskFile ? `✓ ${taskFile.name}` : ""; refreshStart(); });
+$("csv-file").addEventListener("change", (e) => { csvFile = e.target.files[0] || null; $("csv-chip").textContent = csvFile ? `✓ ${csvFile.name}` : ""; refreshStart(); });
+$("extra-files").addEventListener("change", (e) => { extraFiles = Array.from(e.target.files || []); $("extra-chip").textContent = extraFiles.length ? extraFiles.map((f) => `✓ ${f.name}`).join("  ") : ""; });
+$("toggle-advanced").addEventListener("click", () => {
+  const a = $("advanced"); const show = a.style.display === "none";
+  a.style.display = show ? "block" : "none"; $("toggle-advanced").textContent = (show ? "Hide" : "Show") + " advanced options";
+});
+$("toggle-setup").addEventListener("click", () => {
+  const f = $("setup-fields"); const s = $("setup-summary"); const hidden = f.style.display === "none";
+  f.style.display = hidden ? "block" : "none"; s.style.display = hidden ? "none" : "block";
+  $("toggle-setup").textContent = hidden ? "Hide inputs" : "Show inputs";
+});
+function refreshStart() { $("start-btn").disabled = !(taskFile && csvFile && !state.running); }
+
+// ---------- start ----------
+$("start-btn").addEventListener("click", async () => {
+  if (!taskFile || !csvFile) return;
+  state.running = true; refreshStart();
+  $("run-indicator").innerHTML = '<span class="spinner"></span>';
+  $("start-status").textContent = "uploading…"; $("start-btn").textContent = "Running…";
+  try {
+    log("Creating project…");
+    const p = await createProject($("name").value || "ML Project");
+    state.project = p; log(`Project ${p.project_id}`);
+    await uploadFile(p.project_id, "project-document", taskFile); log(`Task brief: ${taskFile.name}`);
+    await uploadFile(p.project_id, "csv", csvFile); log(`Primary dataset: ${csvFile.name}`);
+    for (const f of extraFiles) {
+      const lower = f.name.toLowerCase();
+      if (lower.endsWith(".csv")) { await uploadFile(p.project_id, "csv", f); log(`Additional: ${f.name}`); }
+      else if (lower.endsWith(".pdf")) { await uploadFile(p.project_id, "pdf", f); log(`Additional: ${f.name}`); }
+      else log(`Skipped unsupported file: ${f.name}`);
+    }
+    $("start-status").textContent = "running pipeline (can take a few minutes)…";
+    log("Running pipeline…");
+    const result = await runPipeline(p.project_id, { priorArt: $("prior-art").checked, maxIter: Number($("max-iter").value), minRel: Number($("min-rel").value) });
+    state.result = result;
+    const errs = (result.errors || []).length;
+    log(errs ? `Done (${result.status}) — ${errs} step error(s)` : `Done (${result.status})`);
+    if (errs) state.activeTab = "errors";
+    $("toggle-setup").style.display = "inline";
+    buildTabs(); render();
+  } catch (e) {
+    log(`Error: ${e.message}`); $("start-status").textContent = `Error: ${e.message}`;
+  } finally {
+    state.running = false; $("run-indicator").innerHTML = ""; $("start-btn").textContent = "Start"; refreshStart();
+    if (state.project) {
+      $("setup-summary").textContent = `Project ${state.project.project_id}` + (taskFile ? ` · ${taskFile.name}` : "") + (csvFile ? ` · ${csvFile.name}` : "") + (extraFiles.length ? ` · +${extraFiles.length} extra` : "");
+    }
+  }
+});
+
+// ---------- tabs ----------
+function buildTabs() {
+  const bar = $("tab-bar"); bar.innerHTML = "";
+  TABS.forEach(([id, label]) => {
+    const b = document.createElement("button");
+    const errCount = (state.result?.errors || []).length;
+    b.className = "tab" + (state.activeTab === id ? " active" : "");
+    b.textContent = label + (id === "errors" && errCount ? ` (${errCount})` : "");
+    b.addEventListener("click", () => { state.activeTab = id; buildTabs(); render(); });
+    bar.appendChild(b);
+  });
+}
+
+// ---------- render ----------
+function render() {
+  const r = state.result; const panel = $("tab-panel");
+  if (!r) { panel.innerHTML = '<p class="muted">Run a project to see results.</p>'; return; }
+  const a = r.artifacts || {};
+  const spec = a.project_spec || {};
+  const final = a.final_test_report_obj || {};
+  const models = a.model_comparison || [];
+  $("results-subtitle").innerHTML = `${esc(spec.business_goal || "ML project")} · <span class="pill ${r.status.includes("completed") ? "ok" : "err"}">${esc(r.status)}</span>`;
+
+  let html = "";
+  switch (state.activeTab) {
+    case "overview": html = renderOverview(r, a, spec, final, models); break;
+    case "quality": html = renderQuality(a.data_quality_report); break;
+    case "eda": html = renderEda(a); break;
+    case "preprocessing": html = renderPreprocessing(a); break;
+    case "models": html = renderModels(models, spec, a); break;
+    case "conclusions": html = renderConclusions(a); break;
+    case "errors": html = renderErrors(r); break;
+    case "pipeline": html = renderPipeline(r, a); break;
+  }
+  panel.innerHTML = html;
+}
+
+function metricsBlock(spec, final, models) {
+  const primary = spec.primary_metric || "—";
+  const secondary = (spec.secondary_metrics || []).slice(0, 2);
+  const best = models[0];
+  const gap = best ? best.train_valid_gap : null;
+  const testScore = final.test_metrics && primary !== "—" ? final.test_metrics[primary] : undefined;
+  return `<div class="metrics">
+    <h3>Evaluation metrics</h3>
+    <table><tbody>
+      <tr><td class="muted">Primary metric</td><td class="mono">${esc(primary)}</td></tr>
+      <tr><td class="muted">Secondary metrics (max 2)</td><td class="mono">${secondary.length ? esc(secondary.join(", ")) : "—"}</td></tr>
+      <tr><td class="muted">Train–valid gap (overfit check)</td><td class="mono">${fmt(gap)}${best ? ` <span class="muted small">· best: ${esc(best.model)}</span>` : ""}</td></tr>
+      ${testScore !== undefined ? `<tr><td class="muted">Test ${esc(primary)}</td><td class="mono">${fmt(testScore)}</td></tr>` : ""}
+    </tbody></table>
+    <p class="muted small" style="margin-top:8px">Train–valid gap on the primary metric is the mandatory overfit guard. A large gap = overfitting; iteration stops when validation gains fall below the threshold.</p>
+  </div>`;
+}
+
+function renderOverview(r, a, spec, final, models) {
+  return `<div>
+    <p class="small">${esc(r.summary)}</p>
+    ${metricsBlock(spec, final, models)}
+    <table style="margin-top:12px"><tbody>
+      <tr><td class="muted">Task</td><td class="mono">${fmt(spec.ml_task_type)}</td></tr>
+      <tr><td class="muted">Target</td><td class="mono">${esc((spec.targets || []).join(", ")) || "—"}</td></tr>
+      <tr><td class="muted">Split strategy</td><td class="mono">${fmt(spec.recommended_split || (a.split_report || {}).strategy)}</td></tr>
+      <tr><td class="muted">Selected model</td><td class="mono">${fmt(final.final_model || (models[0] || {}).model)}</td></tr>
+      <tr><td class="muted">Goal met</td><td class="mono">${final.goal_met ? "yes" : "not clearly"}</td></tr>
+    </tbody></table>
+    ${(r.errors || []).length ? `<div class="banner warn">${r.errors.length} step error(s): ${esc(r.errors.map((e) => e.step).join(", "))}</div>` : ""}
+  </div>`;
+}
+
+function plotlyFrame(htmlName, title) {
+  if (!htmlName || !state.project) return "";
+  const url = `${API}/api/projects/${state.project.project_id}/plots/${encodeURIComponent(htmlName)}`;
+  return `<div class="card"><h2>${esc(title)}</h2>
+    <p class="small"><a href="${url}" target="_blank" rel="noopener">Open interactive Plotly chart in new tab ↗</a></p>
+    <iframe class="plotly-frame" src="${url}" title="${esc(title)}"></iframe></div>`;
+}
+
+function renderQuality(dq) {
+  if (!dq) return '<p class="muted">No Data Quality report available.</p>';
+  let h = `<div class="section"><div class="section-head"><div>
+    <div class="section-step">Step 3</div>
+    <div class="section-title">Data Quality Review</div>
+    <div class="muted small">${esc(dq.summary || "")}</div>
+  </div></div><div class="section-body">`;
+
+  h += `<div class="small muted" style="margin:8px 0">
+    Target: <span class="mono">${esc(dq.target_column || "—")}</span> ·
+    Cleaned: <span class="mono">${esc((dq.cleaned_csv_path || "").split("/").pop() || "—")}</span> ·
+    ${dq.n_rows_before}×${dq.n_cols_before} → ${dq.n_rows_after}×${dq.n_cols_after}
+  </div>`;
+
+  if ((dq.image_columns || []).length) {
+    h += `<div class="banner warn">Image column(s) detected: ${esc(dq.image_columns.join(", "))} —
+      excluded from tabular models; requires image feature extraction or a vision model.</div>`;
+  }
+
+  if ((dq.column_profiles || []).length) {
+    h += `<h3>Column Profiles</h3>
+      <table><thead><tr>
+        <th>Column</th><th>Type</th><th>Role</th><th>Missing</th><th>Unique</th><th>Description</th>
+      </tr></thead><tbody>
+      ${dq.column_profiles.map((p) => `<tr>
+        <td class="mono">${esc(p.name)}</td>
+        <td>${esc(p.column_type)}</td>
+        <td><span class="pill ${p.role === "train_feature" ? "ok" : p.role === "target" ? "run" : "warn"}">${esc(p.role)}</span></td>
+        <td class="mono">${(p.pct_missing * 100).toFixed(1)}%</td>
+        <td class="mono">${p.n_unique}</td>
+        <td class="small">${esc(p.description)}</td>
+      </tr>`).join("")}
+      </tbody></table>`;
+  }
+
+  if ((dq.modeling_features || []).length) {
+    h += `<h3>Selected Modeling Features</h3>${tags(dq.modeling_features)}`;
+  }
+  if ((dq.excluded_columns || []).length) {
+    h += `<h3>Excluded Columns</h3>${tags(dq.excluded_columns, "None")}`;
+  }
+  if ((dq.feature_engineering_notes || []).length) {
+    h += `<h3>Feature Engineering Notes</h3><ul class="tight">${dq.feature_engineering_notes.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>`;
+  }
+  if ((dq.bad_row_examples || []).length) {
+    h += `<h3>Bad Row Examples</h3>`;
+    dq.bad_row_examples.forEach((ex) => {
+      h += `<div class="banner" style="margin-bottom:8px"><strong>${esc(ex.issue_type)}</strong>: ${esc(ex.description)}</div>`;
+    });
+  }
+  if ((dq.column_renames || []).length) {
+    h += `<h3>Column Renames</h3><ul class="tight mono">${dq.column_renames.map((r) => `<li>${esc(r.original)} → ${esc(r.cleaned)}</li>`).join("")}</ul>`;
+  }
+  if ((dq.actions_applied || []).length) {
+    h += `<h3>Cleaning Actions Applied</h3><ul class="tight">${dq.actions_applied.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
+  }
+  h += `<h3>Data Issues</h3>`;
+  if (!(dq.issues || []).length) h += '<p class="muted small">No issues recorded.</p>';
+  else h += `<ul class="tight">${dq.issues.slice(0, 40).map((i) =>
+    `<li><span class="pill ${i.severity === "critical" ? "err" : i.severity === "warning" ? "warn" : "run"}">${esc(i.severity || "info")}</span> ${i.column ? `<span class="mono">${esc(i.column)}</span> ` : ""}${esc(i.description)}</li>`
+  ).join("")}</ul>`;
+  h += `</div></div>`;
+  return h;
+}
+
+function renderEda(a) {
+  const ef = a.eda_findings;
+  let h = "";
+  if (a.eda_plotly_html) {
+    h += plotlyFrame(a.eda_plotly_html, "EDA Feature Plots (Plotly)");
+  }
+  if ((a.eda_plotly_conclusions || []).length) {
+    h += `<div class="card"><h2>EDA Conclusions From Plots</h2><ul class="tight">${a.eda_plotly_conclusions.map((c) => `<li>${esc(c.replace(/\*\*/g, ""))}</li>`).join("")}</ul></div>`;
+  }
+  if (ef) {
+    h += `<div class="section"><div class="section-head"><div><div class="section-step">Step 7</div><div class="section-title">EDA Review</div><div class="muted small">${esc(ef.summary || "")}</div></div></div><div class="section-body">`;
+    h += `<h3>Important Columns</h3>${tags(ef.important_columns, "None flagged")}`;
+    h += `<h3>Recommended Drops</h3>${tags(ef.features_to_drop, "None")}`;
+    if ((ef.features_to_engineer || []).length) h += `<h3>Feature Engineering Ideas</h3><ul class="tight">${ef.features_to_engineer.map((e) => `<li><span class="mono">${esc(e.base_column)}</span> → ${esc(e.transform)}${e.rationale ? `: ${esc(e.rationale)}` : ""}</li>`).join("")}</ul>`;
+    if ((ef.preprocessing_implications || []).length) h += `<h3>Preprocessing Implications</h3><ul class="tight muted">${ef.preprocessing_implications.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
+    if ((ef.open_questions || []).length) h += `<h3>Open Questions</h3><ul class="tight muted">${ef.open_questions.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
+    h += `</div></div>`;
+  } else if (!a.eda_plotly_html) h += '<p class="muted">No EDA findings yet.</p>';
+  const plots = a.plot_names || [];
+  if (plots.length && state.project) {
+    h += `<div class="card"><h2>Static EDA Plots</h2><div class="plot-grid">${plots.map((n) => `<a href="${API}/api/projects/${state.project.project_id}/plots/${encodeURIComponent(n)}" target="_blank"><img src="${API}/api/projects/${state.project.project_id}/plots/${encodeURIComponent(n)}" alt="${esc(n)}" /></a>`).join("")}</div></div>`;
+  }
+  return h;
+}
+
+function renderPreprocessing(a) {
+  const pp = a.preprocessing_plan; const sr = a.split_report || {}; const ratios = a.split_ratios || {};
+  let h = "";
+  if (a.split_plotly_html) {
+    h += plotlyFrame(a.split_plotly_html, "Target Distribution by Split (Plotly)");
+  }
+  if (pp || sr.train_rows) {
+    h += `<div class="section"><div class="section-head"><div><div class="section-step">Step 8</div><div class="section-title">Split Data & Scaling</div>
+      <div class="muted small">${sr.strategy ? `Strategy: ${esc(sr.strategy)}` : ""}</div></div></div><div class="section-body">`;
+    h += `<table><tbody>
+      <tr><td class="muted">Train / Validation / Test</td><td class="mono">${sr.train_rows || "—"} / ${sr.valid_rows || "—"} / ${sr.test_rows || "—"}</td></tr>
+      <tr><td class="muted">Ratios</td><td class="mono">${ratios.Train || ""} ${ratios.Validation || ""} ${ratios.Test || ""}</td></tr>
+      <tr><td class="muted">Scaling Method</td><td class="mono">${fmt(pp?.scaling_strategy)} (fit on train only)</td></tr>
+      <tr><td class="muted">Encoding</td><td class="mono">${fmt(pp?.encoding_strategy)}</td></tr>
+      <tr><td class="muted">Missing Values</td><td class="mono">${fmt(typeof pp?.missing_value_strategy === "object" ? "median/mode" : pp?.missing_value_strategy)}</td></tr>
+    </tbody></table>`;
+    if (pp) {
+      h += `<h3>Keep Columns</h3>${tags(pp.keep_columns)}`;
+      h += `<h3>Drop Columns</h3>${tags(pp.drop_columns, "None")}`;
+      if ((pp.notes || []).length) h += `<h3>Notes</h3><ul class="tight muted">${pp.notes.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>`;
+    }
+    h += `</div></div>`;
+  } else h += '<p class="muted">No split/scaling report available.</p>';
+  return h;
+}
+
+function renderModels(models, spec, a) {
+  let h = "";
+  if (!models.length) h += '<p class="muted">No models trained yet.</p>';
+  else {
+    const metric = models[0].primary_metric;
+    const secondary = (spec.secondary_metrics || []).slice(0, 2);
+    h += `<div class="card"><h2>Model Comparison</h2><p class="muted small">Ranked by validation <span class="mono">${esc(metric)}</span>. Train–Validation gap is the mandatory overfit check.${secondary.length ? ` Secondary metrics: ${esc(secondary.join(", "))}.` : ""}</p>
+      <table><thead><tr><th>Model</th><th>Family</th><th>${esc(metric)}</th><th>Train–Valid Gap</th><th>Runtime (s)</th></tr></thead><tbody>
+      ${models.map((m, i) => `<tr class="${i === 0 ? "best" : ""}">
+        <td><div class="mono">${esc(modelDisplayName(m))}${i === 0 ? " ★" : ""}</div></td>
+        <td class="muted">${esc(m.family || "")}</td>
+        <td class="mono">${fmt(m.valid_score)}</td>
+        <td class="mono">${fmt(m.train_valid_gap)}</td>
+        <td class="mono">${fmt(m.runtime_seconds)}</td>
+      </tr>`).join("")}
+      </tbody></table></div>`;
+  }
+  const its = a.iteration_reports || [];
+  if (its.length) {
+    h += `<div class="card"><h2>Iteration History</h2>${its.map((it) => `<div class="section"><div class="section-body" style="border-top:none"><div class="row" style="justify-content:space-between"><div><strong>Iteration ${it.iteration}</strong> · <code class="mono">${esc(it.display_name || it.model_name)}</code></div><span class="pill ${it.accepted ? "ok" : "err"}">${it.accepted ? "accepted" : "rejected"}</span></div><div class="small" style="margin-top:4px">${esc(it.hypothesis || "")}</div><div class="small muted">${esc(it.decision_reason || "")}</div></div></div>`).join("")}
+      ${a.iteration_summary ? `<pre class="md">${esc(a.iteration_summary)}</pre>` : ""}</div>`;
+  }
+  return h;
+}
+
+function renderConclusions(a) {
+  let h = "";
+  if (a.first_conclusion) h += `<div class="card"><h2>First Modeling Conclusion</h2>${mdToHtml(a.first_conclusion)}</div>`;
+  if (a.final_test_report) h += `<div class="card"><h2>Final Test Evaluation</h2>${mdToHtml(a.final_test_report)}</div>`;
+  if (a.prior_art_report && a.prior_art_report.enabled) h += `<div class="card"><h2>Prior Art</h2>${mdToHtml(a.prior_art_report.summary)}</div>`;
+  if (state.project) h += `<div class="card"><h2>Notebook</h2><p class="small"><a href="${API}/api/projects/${state.project.project_id}/notebook/download" target="_blank">Download final notebook (.ipynb)</a></p></div>`;
+  return h || '<p class="muted">No conclusions yet.</p>';
+}
+
+function renderErrors(r) {
+  const errs = r.errors || [];
+  const timelineErrs = (r.timeline || []).filter((t) => t.status === "error");
+  const toolErrs = (r.tool_calls || []).filter((c) => c.status === "error");
+  if (!errs.length && !timelineErrs.length && !toolErrs.length) {
+    return '<p class="muted">No errors recorded for this run.</p>';
+  }
+  let h = "";
+  if (errs.length) {
+    h += `<p class="small muted">${errs.length} pipeline step error(s). Expand each card for details.</p>`;
+    errs.forEach((e, i) => {
+      const msg = String(e.error || "");
+      h += `<div class="error-card"><h3>${esc(e.step || "Unknown step")}</h3>`;
+      h += `<pre class="md">${esc(msg)}</pre>`;
+      if (msg.includes("TIMEOUT")) {
+        h += `<div class="banner warn" style="margin-top:8px">Likely cause: the dataset is large or the target has very high cardinality (many classes), making EDA plots slow. The pipeline continues with partial EDA artifacts. Re-run after updating <span class="mono">CODE_TIMEOUT_SECONDS</span> in <span class="mono">.env</span> or use a smaller sample CSV.</div>`;
+      }
+      const tl = timelineErrs.find((t) => t.title === e.step);
+      if (tl && tl.detail) h += `<div class="small muted" style="margin-top:8px">Timeline detail: ${esc(tl.detail)} · ${tl.duration_ms || "?"} ms</div>`;
+      h += `</div>`;
+    });
+  }
+  if (toolErrs.length) {
+    h += `<div class="card"><h2>Tool errors (${toolErrs.length})</h2>`;
+    toolErrs.forEach((c) => {
+      h += `<div class="error-card" style="margin-bottom:8px"><h3>${esc(c.server)} · ${esc(c.tool)}</h3>`;
+      h += `<pre class="md">${esc(c.output_summary || "unknown tool error")}</pre></div>`;
+    });
+    h += `</div>`;
+  }
+  if (timelineErrs.length && !errs.length) {
+    h += `<div class="card"><h2>Failed steps</h2>`;
+    timelineErrs.forEach((t) => {
+      h += `<div class="error-card"><h3>Step ${t.step}: ${esc(t.title)}</h3><pre class="md">${esc(t.detail || "")}</pre></div>`;
+    });
+    h += `</div>`;
+  }
+  return h;
+}
+
+function renderPipeline(r, a) {
+  let h = `<div class="card"><h2>Agent timeline</h2>`;
+  (r.timeline || []).forEach((t) => {
+    h += `<div class="row" style="padding:8px 0; border-bottom:1px solid var(--border)"><span class="pill ${t.status === "completed" ? "ok" : "err"}">${t.status === "completed" ? t.step : "!"}</span><div><div style="font-weight:600">${esc(t.title)}</div>${t.detail ? `<div class="muted small">${esc(t.detail)}</div>` : ""}${t.duration_ms !== undefined ? `<div class="muted small">${t.duration_ms} ms</div>` : ""}</div></div>`;
+  });
+  h += `</div>`;
+  if (a.working_context) h += `<div class="card"><h2>Agent memory</h2><div class="scroll" style="max-height:240px">${mdToHtml(a.working_context)}</div></div>`;
+  const tc = r.tool_calls || [];
+  if (tc.length) h += `<div class="card"><h2>Tool calls (${tc.length})</h2><div class="scroll" style="max-height:260px">${tc.map((c) => `<div class="small" style="padding:4px 0; border-bottom:1px solid var(--border)"><span class="mono" style="color:var(--accent-2)">${esc(c.tool)}</span> <span class="muted">@ ${esc(c.server)}</span> <span class="pill ${c.status === "success" ? "ok" : "err"}">${esc(c.status)}</span></div>`).join("")}</div></div>`;
+  return h;
+}
+
+refreshStart();
+</script>
+</body>
+</html>
