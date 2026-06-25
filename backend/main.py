@@ -83,7 +83,11 @@ _DASHBOARD_HTML = Path(__file__).resolve().parent / "web" / "dashboard.html"
 @app.get("/")
 def dashboard() -> FileResponse:
     """Serve the self-contained single-page dashboard (no Node build required)."""
-    return FileResponse(_DASHBOARD_HTML, media_type="text/html")
+    return FileResponse(
+        _DASHBOARD_HTML,
+        media_type="text/html",
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+    )
 
 
 @app.get("/api/info")

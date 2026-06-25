@@ -26,6 +26,38 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
+function ResultsHero({
+  result,
+  running,
+}: {
+  result: RunResponse | null;
+  running?: boolean;
+}) {
+  let right: React.ReactNode = null;
+
+  if (running) {
+    right = (
+      <>
+        <span className="spinner" />
+        <span className="small muted">running pipeline (can take a few minutes)…</span>
+      </>
+    );
+  } else if (result) {
+    const errs = result.errors?.length ?? 0;
+    const statusOk = result.status.includes("completed") && !errs;
+    const statusClass = statusOk ? "ok" : result.status.includes("completed") ? "warn" : "err";
+    const statusLabel = statusOk ? "completed" : result.status.replace(/_/g, " ");
+    right = <span className={`pill ${statusClass}`}>{statusLabel}</span>;
+  }
+
+  return (
+    <div className="results-header">
+      <h2>Results</h2>
+      {right ? <div className="results-head-actions">{right}</div> : null}
+    </div>
+  );
+}
+
 function MetricsPanel({ spec, final, modelRows }: { spec: any; final: any; modelRows: any[] }) {
   const primary = spec.primary_metric || "—";
   const secondary = (spec.secondary_metrics || []).slice(0, 2);
@@ -81,21 +113,18 @@ function MetricsPanel({ spec, final, modelRows }: { spec: any; final: any; model
 export function DashboardResults({
   result,
   project,
+  running = false,
 }: {
   result: RunResponse | null;
   project: ProjectInfo | null;
+  running?: boolean;
 }) {
   const [tab, setTab] = useState<TabId>("overview");
 
   if (!result) {
     return (
       <div className="dashboard-results dashboard-empty">
-        <div className="results-header">
-          <h2>Results</h2>
-          <p className="muted small" style={{ margin: 0 }}>
-            Select your task brief and primary CSV, then click <strong>Start</strong>.
-          </p>
-        </div>
+        <ResultsHero result={null} running={running} />
         <ScrollBox maxHeight="100%" className="dashboard-empty-scroll">
           <p className="muted">
             Results will appear here across tabs: data cleaning, EDA, preprocessing, models, and
@@ -122,17 +151,7 @@ export function DashboardResults({
 
   return (
     <div className="dashboard-results">
-      <div className="results-header">
-        <div>
-          <h2>Results</h2>
-          <p className="muted small" style={{ margin: 0 }}>
-            {spec.business_goal || "ML project"} ·{" "}
-            <span className={`pill ${result.status.includes("completed") ? "ok" : "err"}`}>
-              {result.status}
-            </span>
-          </p>
-        </div>
-      </div>
+      <ResultsHero result={result} running={running} />
 
       <div className="tab-bar">
         {TABS.map((t) => (
@@ -302,20 +321,20 @@ export function DashboardResults({
             <div className="tab-section">
               <ModelComparisonTable rows={modelRows} spec={spec} />
               {(artifacts.iteration_reports || []).length > 0 && (
-                <div className="card" style={{ marginTop: 12 }}>
+                <div className="model-panel">
                   <h2>Iteration history</h2>
                   {(artifacts.iteration_reports || []).map((it: any) => (
-                    <div className="tool" key={it.iteration}>
+                    <div className="iter-card" key={it.iteration}>
                       <div className="top">
                         <div>
                           <strong>Iteration {it.iteration}</strong> ·{" "}
-                          <code>{it.model_name}</code>
+                          <span className="mono">{it.display_name || it.model_name}</span>
                         </div>
                         <span className={`pill ${it.accepted ? "ok" : "err"}`}>
                           {it.accepted ? "accepted" : "rejected"}
                         </span>
                       </div>
-                      <div className="summary small">
+                      <div className="summary small" style={{ marginTop: 6 }}>
                         <div>{it.hypothesis}</div>
                         <div className="muted">{it.decision_reason}</div>
                       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import {
   ProjectInfo,
   RunResponse,
@@ -18,6 +18,78 @@ interface Props {
   setRunning: (v: boolean) => void;
 }
 
+function FileDocIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+    </svg>
+  );
+}
+
+function SetupFolderIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
+function FileField({
+  id,
+  label,
+  accept,
+  multiple,
+  disabled,
+  buttonLabel,
+  file,
+  files,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  accept: string;
+  multiple?: boolean;
+  disabled?: boolean;
+  buttonLabel: string;
+  file?: File | null;
+  files?: File[];
+  onChange: (files: FileList | null) => void;
+}) {
+  const inline =
+    multiple &&
+    (files?.length
+      ? files.length === 1
+        ? files[0].name
+        : `${files.length} files chosen`
+      : "No file chosen");
+
+  return (
+    <div className="field">
+      <label htmlFor={id}>{label}</label>
+      <div className={`file-picker ${multiple ? "file-picker-row" : ""}`}>
+        <label className="file-btn" htmlFor={id}>
+          <FileDocIcon />
+          {buttonLabel}
+        </label>
+        {multiple && (
+          <span className={`file-inline ${files?.length ? "" : "muted"}`}>{inline}</span>
+        )}
+        <input
+          id={id}
+          type="file"
+          className="sr-only"
+          accept={accept}
+          multiple={multiple}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.files)}
+        />
+      </div>
+      {!multiple && file && <div className="file-ok">✓ {file.name}</div>}
+    </div>
+  );
+}
+
 export function DashboardSetup({
   project,
   setProject,
@@ -26,6 +98,10 @@ export function DashboardSetup({
   running,
   setRunning,
 }: Props) {
+  const taskId = useId();
+  const csvId = useId();
+  const extraId = useId();
+
   const [name, setName] = useState("ML Project");
   const [taskFile, setTaskFile] = useState<File | null>(null);
   const [primaryCsv, setPrimaryCsv] = useState<File | null>(null);
@@ -36,6 +112,7 @@ export function DashboardSetup({
   const [minRel, setMinRel] = useState(0.05);
   const [resume, setResume] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [statusText, setStatusText] = useState("");
 
   const canStart = !!taskFile && !!primaryCsv && !running;
 
@@ -46,6 +123,7 @@ export function DashboardSetup({
       return;
     }
     setRunning(true);
+    setStatusText("uploading…");
     onLog("Creating project and uploading files…");
     try {
       let p = project;
@@ -78,6 +156,7 @@ export function DashboardSetup({
       }
 
       onLog("Running pipeline…");
+      setStatusText("running pipeline…");
       const result = await runPipeline(p.project_id, {
         enablePriorArt,
         maxIterations,
@@ -94,20 +173,22 @@ export function DashboardSetup({
       );
     } catch (e: any) {
       onLog(`Error: ${e.message}`);
+      setStatusText(`Error: ${e.message}`);
     } finally {
       setRunning(false);
+      setStatusText("");
     }
-  }
-
-  function onAdditionalChange(files: FileList | null) {
-    if (!files) return;
-    setAdditionalFiles(Array.from(files));
   }
 
   return (
     <div className={`card setup-card ${collapsed ? "setup-collapsed" : ""}`}>
       <div className="setup-header">
-        <h2>Project setup</h2>
+        <div className="setup-title">
+          <span className="setup-icon" aria-hidden="true">
+            <SetupFolderIcon />
+          </span>
+          <h2>Project setup</h2>
+        </div>
         {project && (
           <button
             type="button"
@@ -122,74 +203,74 @@ export function DashboardSetup({
       {!collapsed && (
         <>
           <div className="setup-row">
-            <div className="field">
-              <label>Project name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                disabled={running}
-              />
+            <div className="setup-col-name">
+              <div className="field">
+                <label>Project name</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={running}
+                />
+              </div>
+              <div className="setup-meta">
+                <button
+                  type="button"
+                  className="btn-link small"
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                >
+                  {showAdvanced ? "Hide" : "Show"} advanced options
+                </button>
+              </div>
             </div>
 
-            <div className="field">
-              <label>Task brief — .md, .txt, .pdf, .doc, .docx</label>
-              <input
-                type="file"
-                accept=".md,.txt,.pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                disabled={running}
-                onChange={(e) => setTaskFile(e.target.files?.[0] ?? null)}
-              />
-              {taskFile && <div className="file-chip ok">✓ {taskFile.name}</div>}
-            </div>
+            <FileField
+              id={taskId}
+              label="Task brief — .md, .txt, .pdf, .doc, .docx"
+              accept=".md,.txt,.pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              buttonLabel="Choose File"
+              file={taskFile}
+              disabled={running}
+              onChange={(files) => setTaskFile(files?.[0] ?? null)}
+            />
 
-            <div className="field">
-              <label>Primary dataset — one CSV</label>
-              <input
-                type="file"
-                accept=".csv"
-                disabled={running}
-                onChange={(e) => setPrimaryCsv(e.target.files?.[0] ?? null)}
-              />
-              {primaryCsv && <div className="file-chip ok">✓ {primaryCsv.name}</div>}
-            </div>
+            <FileField
+              id={csvId}
+              label="Primary dataset — one CSV"
+              accept=".csv"
+              buttonLabel="Choose File"
+              file={primaryCsv}
+              disabled={running}
+              onChange={(files) => setPrimaryCsv(files?.[0] ?? null)}
+            />
 
-            <div className="field">
-              <label>Additional data — CSV / PDF</label>
-              <input
-                type="file"
-                accept=".csv,.pdf"
-                multiple
-                disabled={running}
-                onChange={(e) => onAdditionalChange(e.target.files)}
-              />
-              {additionalFiles.map((f) => (
-                <div key={f.name} className="file-chip">
-                  ✓ {f.name}
-                </div>
-              ))}
-            </div>
+            <FileField
+              id={extraId}
+              label="Additional data — CSV / PDF"
+              accept=".csv,.pdf"
+              multiple
+              buttonLabel="Choose Files"
+              files={additionalFiles}
+              disabled={running}
+              onChange={(files) => setAdditionalFiles(files ? Array.from(files) : [])}
+            />
 
-            <div className="setup-actions">
-              <button className="btn start-btn" disabled={!canStart} onClick={start}>
+            <div className="setup-start">
+              <button className="btn btn-start start-btn" disabled={!canStart} onClick={start}>
                 {running ? "Running…" : "Start"}
               </button>
+              <div className="start-hint">
+                {!running && !statusText && (
+                  <>
+                    <span className="hint-icon" title="Typical run time on demo-sized datasets">
+                      ⓘ
+                    </span>
+                    <span>Running pipeline (~2–5 min)</span>
+                  </>
+                )}
+                {statusText && <span>{statusText}</span>}
+              </div>
             </div>
-          </div>
-
-          <div className="setup-meta">
-            <button
-              type="button"
-              className="btn-link small muted"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-            >
-              {showAdvanced ? "Hide" : "Show"} advanced options
-            </button>
-            {running && (
-              <span className="row small muted">
-                <span className="spinner" /> Agents working…
-              </span>
-            )}
           </div>
 
           {showAdvanced && (
