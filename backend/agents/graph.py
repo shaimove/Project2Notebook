@@ -12,9 +12,17 @@ from __future__ import annotations
 
 import logging
 import time
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple
 
+from backend.agents.contracts import (
+    NodeContract,
+    NodeContractError,
+    build_artifact_producers,
+    validate_inputs,
+    verify_outputs,
+)
 from backend.agents.state import DataScientist
 from backend.mcp_client.client import MCPClient
 from backend.services.checkpoint_store import get_checkpoint_store
@@ -37,22 +45,34 @@ from backend.agents.nodes import (
 
 NodeFn = Callable[[DataScientist, MCPClient], DataScientist]
 
-WORKFLOW: List[Tuple[str, NodeFn]] = [
-    ("Project Understanding (plan)", project_understanding.run),
-    ("Prior Art Search (research)", prior_art.run),
-    ("Data Quality Review (review+code)", data_quality.run),
-    ("Data Audit (review)", data_audit.run),
-    ("EDA Planning (plan)", eda_planning.run),
-    ("EDA Code Agent (code)", executable_eda.run),
-    ("EDA Review (review)", eda_review.run),
-    ("Preprocessing Planner + Code Agent (plan+code)", preprocessing_plan.run),
-    ("Modeling + Code Agent (code)", baseline_modeling.run),
-    ("First Conclusion (review)", first_conclusion.run),
-    ("Iteration + Code Agent (code)", iteration_loop.run),
-    ("Leakage Review (review)", leakage_review.run),
-    ("Final Test Evaluation (review)", final_test_evaluation.run),
-    ("Notebook Author (code)", notebook_author.run),
+
+@dataclass(frozen=True)
+class WorkflowStep:
+    title: str
+    run: NodeFn
+    contract: NodeContract
+
+
+WORKFLOW: List[WorkflowStep] = [
+    WorkflowStep("Project Understanding (plan)", project_understanding.run, project_understanding.CONTRACT),
+    WorkflowStep("Prior Art Search (research)", prior_art.run, prior_art.CONTRACT),
+    WorkflowStep("Data Quality Review (review+code)", data_quality.run, data_quality.CONTRACT),
+    WorkflowStep("Data Audit (review)", data_audit.run, data_audit.CONTRACT),
+    WorkflowStep("EDA Planning (plan)", eda_planning.run, eda_planning.CONTRACT),
+    WorkflowStep("EDA Code Agent (code)", executable_eda.run, executable_eda.CONTRACT),
+    WorkflowStep("EDA Review (review)", eda_review.run, eda_review.CONTRACT),
+    WorkflowStep("Preprocessing Planner + Code Agent (plan+code)", preprocessing_plan.run, preprocessing_plan.CONTRACT),
+    WorkflowStep("Modeling + Code Agent (code)", baseline_modeling.run, baseline_modeling.CONTRACT),
+    WorkflowStep("First Conclusion (review)", first_conclusion.run, first_conclusion.CONTRACT),
+    WorkflowStep("Iteration + Code Agent (code)", iteration_loop.run, iteration_loop.CONTRACT),
+    WorkflowStep("Leakage Review (review)", leakage_review.run, leakage_review.CONTRACT),
+    WorkflowStep("Final Test Evaluation (review)", final_test_evaluation.run, final_test_evaluation.CONTRACT),
+    WorkflowStep("Notebook Author (code)", notebook_author.run, notebook_author.CONTRACT),
 ]
+
+_ARTIFACT_PRODUCERS = build_artifact_producers(
+    [(step.title, step.contract) for step in WORKFLOW]
+)
 
 logger = logging.getLogger(__name__)
 
@@ -77,18 +97,31 @@ def run_graph(
 
     client = MCPClient(on_log=lambda entry: state["tool_calls"].append(entry))
 
-    for idx, (title, fn) in enumerate(WORKFLOW, start=1):
+    for idx, step in enumerate(WORKFLOW, start=1):
         if idx < start_step:
             continue
+        title = step.title
+        fn = step.run
         start = time.time()
         logger.info("Pipeline step %d: %s (run %s)", idx, title, run_id)
         try:
+            validate_inputs(title, step.contract, state, artifact_producers=_ARTIFACT_PRODUCERS)
             state = fn(state, client)
+            verify_outputs(title, step.contract, state)
             detail = _detail_for(title, state)
             _add_timeline(state, idx, title, "completed", detail, start)
             store.save_checkpoint(
                 run_id, idx, title, dict(state), status="completed",
                 duration_ms=int((time.time() - start) * 1000),
+            )
+        except NodeContractError as exc:
+            logger.error("Pipeline contract violation: %s", title)
+            err = {"step": title, "error": str(exc), "code": exc.code}
+            state["errors"].append(err)
+            _add_timeline(state, idx, title, "error", str(exc), start)
+            store.save_checkpoint(
+                run_id, idx, title, dict(state), status="error",
+                error=err, duration_ms=int((time.time() - start) * 1000),
             )
         except Exception as exc:  # noqa: BLE001 - keep the run alive, record the error
             logger.exception("Pipeline step failed: %s", title)

@@ -12,10 +12,18 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from backend.agents import code_authoring
+from backend.agents.contracts import NodeContract
 from backend.agents.state import DataScientist
 from backend.exceptions import PipelineStepError
 from backend.mcp_client.client import MCPClient
 from backend.services import artifact_store, memory
+
+CONTRACT = NodeContract(
+    requires=("eda_plan.json", "data_audit_report.json"),
+    requires_state=("project_id", "csv_paths", "eda_plan", "data_audit_report"),
+    produces=("eda_artifacts.json", "eda_report.md"),
+    produces_state=("eda_artifacts", "eda_report"),
+)
 
 
 def run(state: DataScientist, client: MCPClient) -> DataScientist:

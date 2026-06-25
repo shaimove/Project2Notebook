@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
+from backend.agents.contracts import NodeContract
 from backend.agents.state import DataScientist
 from backend.mcp_client.client import MCPClient
 from backend.schemas.experiment import FinalTestReport, ModelEvaluationResult
@@ -14,6 +15,13 @@ from backend.schemas.validation import validate_model
 from backend.services import artifact_store, memory
 
 MD = "modeling-tools"
+
+CONTRACT = NodeContract(
+    requires=("split_report.json", "model_results.json", "leakage_review.json"),
+    requires_state=("project_id", "best_pipeline_id", "primary_metric"),
+    produces=("final_test_report.json", "final_test_report.md"),
+    produces_state=("final_test_report", "final_test_report_obj"),
+)
 
 
 def run(state: DataScientist, client: MCPClient) -> DataScientist:

@@ -12,6 +12,7 @@ from typing import Any, Dict, List
 from pydantic import ValidationError as PydanticValidationError
 
 from backend.agents.state import DataScientist
+from backend.agents.contracts import NodeContract
 from backend.mcp_client.client import MCPClient
 from backend.schemas.data_audit import DatasetSummary, TargetDistribution
 from backend.schemas.project_spec import ProjectSpec
@@ -23,6 +24,12 @@ PU = "project-understanding-tools"
 DI = "data-inspection-tools"
 
 logger = logging.getLogger(__name__)
+
+CONTRACT = NodeContract(
+    requires_state=("project_id", "csv_paths"),
+    produces=("project_spec.json", "project_understanding.md"),
+    produces_state=("project_spec", "primary_metric"),
+)
 
 
 def run(state: DataScientist, client: MCPClient) -> DataScientist:

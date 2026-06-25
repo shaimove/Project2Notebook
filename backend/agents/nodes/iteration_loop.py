@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from backend.agents import code_authoring
+from backend.agents.contracts import NodeContract
 from backend.agents.state import DataScientist
 from backend.mcp_client.client import MCPClient
 from backend.mcp_client.tool_result import optional_tool_result
@@ -40,6 +41,13 @@ _TOOL_FOR = {
     "boosting": "train_boosting_model",
     "svm": "train_svm_model",
 }
+
+CONTRACT = NodeContract(
+    requires=("baseline_results.json", "model_results.json"),
+    requires_state=("project_id", "model_comparison", "best_pipeline_id", "primary_metric"),
+    produces=("iteration_summary.md", "iteration_report.md", "iteration_result.json"),
+    produces_state=("iteration_reports", "iteration_summary"),
+)
 
 
 def _models_dir(project_id: str) -> Path:

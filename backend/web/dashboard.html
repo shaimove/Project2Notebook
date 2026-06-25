@@ -106,6 +106,13 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   a { color: var(--accent); }
   .plotly-frame { width: 100%; min-height: 640px; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
+  .mcp-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .mcp-table th { position: sticky; top: 0; background: var(--panel-2); z-index: 1; }
+  .mcp-row { cursor: pointer; }
+  .mcp-row:hover td { background: rgba(91,141,239,0.06); }
+  .mcp-detail { display: none; }
+  .mcp-detail.open { display: table-row; }
+  .mcp-detail pre { margin: 0; max-height: 200px; overflow: auto; }
 </style>
 </head>
 <body>
@@ -200,6 +207,7 @@ const TABS = [
   ["preprocessing", "Split Data"],
   ["models", "Models"],
   ["conclusions", "Conclusions"],
+  ["mcp", "MCP Calls"],
   ["errors", "Errors"],
   ["pipeline", "Pipeline Log"],
 ];
@@ -338,7 +346,7 @@ function buildTabs() {
     const b = document.createElement("button");
     const errCount = (state.result?.errors || []).length;
     b.className = "tab" + (state.activeTab === id ? " active" : "");
-    b.textContent = label + (id === "errors" && errCount ? ` (${errCount})` : "");
+    b.textContent = label + (id === "errors" && errCount ? ` (${errCount})` : "") + (id === "mcp" && (state.result?.tool_calls || []).length ? ` (${(state.result.tool_calls).length})` : "");
     b.addEventListener("click", () => { state.activeTab = id; buildTabs(); render(); });
     bar.appendChild(b);
   });
@@ -357,11 +365,12 @@ function render() {
   let html = "";
   switch (state.activeTab) {
     case "overview": html = renderOverview(r, a, spec, final, models); break;
-    case "quality": html = renderQuality(a.data_quality_report); break;
+    case "quality": html = renderQuality(a.data_quality_report, a); break;
     case "eda": html = renderEda(a); break;
     case "preprocessing": html = renderPreprocessing(a); break;
     case "models": html = renderModels(models, spec, a); break;
     case "conclusions": html = renderConclusions(a); break;
+    case "mcp": html = renderMcpCalls(r); break;
     case "errors": html = renderErrors(r); break;
     case "pipeline": html = renderPipeline(r, a); break;
   }
@@ -409,9 +418,14 @@ function plotlyFrame(htmlName, title) {
     <iframe class="plotly-frame" src="${url}" title="${esc(title)}"></iframe></div>`;
 }
 
-function renderQuality(dq) {
+function renderQuality(dq, a) {
   if (!dq) return '<p class="muted">No Data Quality report available.</p>';
-  let h = `<div class="section"><div class="section-head"><div>
+  let h = "";
+  const qHtml = (a && a.quality_plotly_html) || dq.quality_plotly_html;
+  if (qHtml) h += plotlyFrame(qHtml, "Data Quality Overview (Plotly)");
+  const auditHtml = a && a.audit_plotly_html;
+  if (auditHtml) h += plotlyFrame(auditHtml, "Missing Values by Column (Data Audit)");
+  h += `<div class="section"><div class="section-head"><div>
     <div class="section-step">Step 3</div>
     <div class="section-title">Data Quality Review</div>
     <div class="muted small">${esc(dq.summary || "")}</div>
@@ -599,6 +613,34 @@ function renderErrors(r) {
   return h;
 }
 
+function renderMcpCalls(r) {
+  const tc = r.tool_calls || [];
+  if (!tc.length) return '<p class="muted">No MCP tool calls recorded for this run.</p>';
+  const byServer = {};
+  tc.forEach((c) => { byServer[c.server] = (byServer[c.server] || 0) + 1; });
+  let h = `<div class="card"><h2>MCP tool calls (${tc.length})</h2>`;
+  h += `<p class="small muted">Every agent action goes through the MCP client. Expand a row for tool input.</p>`;
+  h += `<div class="tags" style="margin-bottom:10px">${Object.entries(byServer).map(([s, n]) => `<span class="pill run">${esc(s)}: ${n}</span>`).join(" ")}</div>`;
+  h += `<div class="scroll" style="max-height:70vh"><table class="mcp-table"><thead><tr>
+    <th>#</th><th>Server</th><th>Tool</th><th>Status</th><th>Duration</th><th>Output</th>
+  </tr></thead><tbody>`;
+  tc.forEach((c, i) => {
+    h += `<tr class="mcp-row" onclick="this.nextElementSibling.classList.toggle('open')">
+      <td>${i + 1}</td>
+      <td class="mono">${esc(c.server)}</td>
+      <td class="mono" style="color:var(--accent-2)">${esc(c.tool)}</td>
+      <td><span class="pill ${c.status === "success" ? "ok" : "err"}">${esc(c.status)}</span></td>
+      <td class="muted">${c.duration_ms != null ? c.duration_ms + " ms" : "—"}</td>
+      <td class="small muted">${esc(c.output_summary || "")}</td>
+    </tr>`;
+    h += `<tr class="mcp-detail"><td colspan="6"><pre class="md">${esc(JSON.stringify(c.input || {}, null, 2))}</pre></td></tr>`;
+  });
+  h += `</tbody></table></div></div>`;
+  const errCount = tc.filter((c) => c.status === "error").length;
+  if (errCount) h += `<div class="banner err" style="margin-top:10px">${errCount} tool call(s) returned an error.</div>`;
+  return h;
+}
+
 function renderPipeline(r, a) {
   let h = `<div class="card"><h2>Agent timeline</h2>`;
   (r.timeline || []).forEach((t) => {
@@ -606,8 +648,7 @@ function renderPipeline(r, a) {
   });
   h += `</div>`;
   if (a.working_context) h += `<div class="card"><h2>Agent memory</h2><div class="scroll" style="max-height:240px">${mdToHtml(a.working_context)}</div></div>`;
-  const tc = r.tool_calls || [];
-  if (tc.length) h += `<div class="card"><h2>Tool calls (${tc.length})</h2><div class="scroll" style="max-height:260px">${tc.map((c) => `<div class="small" style="padding:4px 0; border-bottom:1px solid var(--border)"><span class="mono" style="color:var(--accent-2)">${esc(c.tool)}</span> <span class="muted">@ ${esc(c.server)}</span> <span class="pill ${c.status === "success" ? "ok" : "err"}">${esc(c.status)}</span></div>`).join("")}</div></div>`;
+  h += `<p class="small muted">Full MCP trace: open the <strong>MCP Calls</strong> tab (${(r.tool_calls || []).length} calls).</p>`;
   return h;
 }
 

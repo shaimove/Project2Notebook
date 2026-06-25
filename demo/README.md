@@ -29,6 +29,13 @@ python -m backend.cli demo
 This runs the full agentic pipeline and prints the timeline, tool-call count,
 summary, and the path to the generated notebook + artifacts.
 
+For the interactive dashboard (Plotly charts, **MCP Calls** tab, model comparison):
+
+```bash
+python run.py
+# http://localhost:8000 — upload demo/project_description.md + demo/sample_dataset.csv
+```
+
 To regenerate the dataset:
 
 ```bash

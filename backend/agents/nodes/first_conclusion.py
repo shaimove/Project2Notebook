@@ -7,10 +7,18 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
+from backend.agents.contracts import NodeContract
 from backend.agents.state import DataScientist
 from backend.mcp_client.client import MCPClient
 from backend.services import artifact_store, memory
 from backend.services.llm import llm
+
+CONTRACT = NodeContract(
+    requires=("model_results.json", "split_report.json"),
+    requires_state=("project_id", "model_comparison", "project_spec"),
+    produces=("first_conclusion.md",),
+    produces_state=("first_conclusion",),
+)
 
 
 def run(state: DataScientist, client: MCPClient) -> DataScientist:

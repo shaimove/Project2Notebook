@@ -7,11 +7,19 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
+from backend.agents.contracts import NodeContract
 from backend.agents.state import DataScientist
 from backend.mcp_client.client import MCPClient
 from backend.services import artifact_store, memory
 
 PP = "preprocessing-tools"
+
+CONTRACT = NodeContract(
+    requires=("preprocessing_plan.json", "split_report.json"),
+    requires_state=("project_id", "preprocessing_plan", "split_report", "project_spec"),
+    produces=("leakage_review.json", "leakage_flags.json", "leakage_review.md"),
+    produces_state=("leakage_review",),
+)
 
 
 def run(state: DataScientist, client: MCPClient) -> DataScientist:

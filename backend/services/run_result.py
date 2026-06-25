@@ -31,6 +31,8 @@ def assemble_artifacts(state: DataScientist) -> Dict[str, Any]:
         "eda_findings_report": state.get("eda_findings_report"),
         "eda_plotly_html": state.get("eda_plotly_html"),
         "eda_plotly_conclusions": state.get("eda_plotly_conclusions"),
+        "quality_plotly_html": state.get("quality_plotly_html"),
+        "audit_plotly_html": state.get("audit_plotly_html"),
         "modeling_features": state.get("modeling_features"),
         "excluded_columns": state.get("excluded_columns"),
         "preprocessing_plan": state.get("preprocessing_plan"),

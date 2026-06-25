@@ -15,7 +15,7 @@ through an **MCP client**, and every tool call is logged and shown in the UI.
 
 ![Project2Notebook dashboard — project setup, results tabs, model comparison, and activity log](docs/dashboard-screenshot.png)
 
-*Example run on the demo churn dataset: upload a brief and CSV, click **Start**, and browse results across tabs (Data Quality, EDA, models, conclusions) while the pipeline log streams on the right.*
+*Example run on the demo churn dataset: upload a brief and CSV, click **Start**, and browse results across tabs (Data Quality, EDA, models, conclusions) while the activity log streams on the right. Use the **MCP Calls** tab to inspect every tool invocation.*
 
 ---
 
@@ -23,6 +23,9 @@ through an **MCP client**, and every tool call is logged and shown in the UI.
 - [What it is / what it solves](#what-it-is)
 - [Why it's different from a chatbot or AutoML](#why-different)
 - [Why MCP](#why-mcp)
+- [MCP tool servers](#mcp-tool-servers)
+- [Dashboard tabs](#dashboard-tabs)
+- [Node input/output contracts](#node-contracts)
 - [The Prior Art Agent](#prior-art-agent)
 - [Agent workflow](#agent-workflow)
 - [Iteration stopping rule](#stopping-rule)
@@ -65,13 +68,84 @@ to a reviewer.
 > applications.
 
 In this repo the agents **never import tool implementations directly** — they go
-through `backend/mcp_client/client.py`. Tools live in eight independent servers
+through `backend/mcp_client/client.py`. Tools live in **twelve independent servers**
 under `mcp_servers/`. For the MVP the client talks to the servers **in-process**
 (robust, dependency-light) while preserving the protocol-style architecture. The
 same servers can be served over **real MCP stdio transport** (each server file
 has a `serve_fastmcp` entrypoint); swapping the registry to a subprocess
 transport requires no change to the agents. This limitation is documented in
 `backend/mcp_client/registry.py`.
+
+**Design principle:** critical work (data cleaning, splits, training, metrics,
+interactive charts) runs through **tested MCP tools**. Agents decide *what* to
+call; tools perform *how* it runs. Generated Python is reserved for exploratory
+EDA scripts and notebook reproduction — not for leakage-critical paths.
+
+<a name="mcp-tool-servers"></a>
+## MCP tool servers
+
+Discover the full catalogue at runtime:
+
+```bash
+curl http://localhost:8000/api/tools
+```
+
+| Server | Domain | Example tools |
+|--------|--------|----------------|
+| `project-understanding-tools` | Brief parsing | `parse_project_document`, `infer_ml_task`, `suggest_metrics` |
+| `prior-art-tools` | Offline knowledge | `summarize_common_approaches`, `extract_candidate_strategies` |
+| `data-quality-tools` | Raw CSV curation | `scan_data_quality`, `apply_remediation` |
+| `data-inspection-tools` | Profiling & audit | `profile_dataset`, `summarize_missing_values`, `detect_time_columns` |
+| `eda-tools` | Matplotlib EDA (code runner) | `create_target_distribution_plot`, `create_missingness_plot` |
+| `eda-review-tools` | Interpret EDA output | `analyze_eda_tables`, `list_eda_plot_inventory` |
+| **`viz-tools`** | **Plotly HTML charts** | `generate_eda_plotly_html`, `generate_data_quality_plotly_html`, `generate_split_target_plotly_html`, `generate_audit_missingness_plotly_html` |
+| `preprocessing-tools` | Leakage-safe prep | `create_preprocessing_plan`, `build_train_valid_test_split`, `fit_preprocessor_on_train` |
+| `modeling-tools` | Train & evaluate | `train_random_forest`, `evaluate_on_test` |
+| `experiment-tools` | Iteration logic | `suggest_next_iteration`, `stop_iteration_decision` |
+| `notebook-tools` | `.ipynb` assembly | `update_notebook`, `export_final_notebook` |
+| `code-tools` | Sandboxed scripts | `validate_no_shell_commands`, `write_python_file`, `run_python_file` |
+
+Plotly HTML files are saved under `artifacts/{project_id}/plots/` and embedded in
+the dashboard. The **Notebook Author** reuses these artifacts and authored
+`code/*.py` files — it does not regenerate analysis from scratch.
+
+<a name="dashboard-tabs"></a>
+## Dashboard tabs
+
+The single-page dashboard (`python run.py` → http://localhost:8000) exposes:
+
+| Tab | Content |
+|-----|---------|
+| **Overview** | Summary, metrics, task/target/split, selected model |
+| **Data Quality** | Column profiles, remediation decisions, Plotly quality overview |
+| **EDA** | Plotly feature charts, EDA findings, static plot gallery |
+| **Split Data** | Preprocessing plan, split ratios, target-by-split Plotly chart |
+| **Models** | Model comparison table, iteration history |
+| **Conclusions** | First/final conclusions, notebook download |
+| **MCP Calls** | Full trace of every MCP tool call (server, tool, status, duration, input) |
+| **Errors** | Pipeline step failures and tool errors |
+| **Pipeline Log** | Agent timeline and working memory |
+
+<a name="node-contracts"></a>
+## Node input/output contracts
+
+Each pipeline node declares what it **requires** and **produces** (artifact files
+and state keys). Before a step runs, the graph validates inputs and fails fast
+with a clear error if upstream outputs are missing.
+
+Example (`eda_planning`):
+
+```python
+CONTRACT = NodeContract(
+    requires=("project_spec.json", "data_audit_report.json"),
+    requires_state=("project_spec", "data_audit_report"),
+    produces=("eda_plan.json", "eda_plan.md"),
+    produces_state=("eda_plan",),
+)
+```
+
+See `backend/agents/contracts.py` and each `CONTRACT` in `backend/agents/nodes/`.
+Checkpoints + contracts together make runs **resumable and predictable**.
 
 <a name="prior-art-agent"></a>
 ## What the Prior Art Agent does
@@ -104,7 +178,8 @@ Project Understanding → Prior Art → Data Quality Review → Data Audit
 ```
 
 Each node writes a clear artifact (`project_spec.json`, `data_quality_report.json`,
-`data_audit_report.json`, `eda_report.md`, `eda_findings.json`,
+`data_audit_report.json`, `eda_plan.json`, `eda_report.md`, `eda_findings.json`,
+Plotly HTML under `plots/`, `preprocessing_plan.json`, `split_report.json`,
 `baseline_results.json`, `model_comparison.csv`, `first_conclusion.md`,
 `iteration_*_report.json`, `iteration_summary.md`, `final_test_report.md`,
 `final_notebook.ipynb`) under `backend/storage/artifacts/{project_id}/`.
@@ -122,15 +197,18 @@ Each node writes a clear artifact (`project_spec.json`, `data_quality_report.jso
   `eda_report.md`+`eda_artifacts.json`, `preprocessing_decisions.md`+`preprocessing_plan.json`,
   `modeling_report.md`+`model_results.json`, `iteration_report.md`+`iteration_result.json`,
   `leakage_review.md`+`leakage_flags.json`.
-- **Only code agents write/execute Python.** Planning/review agents (Project
-  Understanding, Data Audit, EDA Planning, First Conclusion, Leakage Review, Final
-  Evaluation) describe *what* code is needed. The **code agents**
+- **Only code agents write/execute Python** for exploratory scripts. Planning/review
+  agents (Project Understanding, Data Audit, EDA Planning, First Conclusion,
+  Leakage Review, Final Evaluation) describe *what* is needed or call MCP tools
+  directly. **Visualization** (Plotly EDA, data-quality charts, split diagnostics)
+  runs through **`viz-tools`**, not ad-hoc imports in agent nodes. The **code agents**
   (`backend/agents/code_authoring.py`: EDA / Preprocessing / Modeling / Iteration /
-  Notebook + a **Code Debugger Agent**) author code and run it through the
-  **code-tools** MCP server with the loop:
+  Notebook + a **Code Debugger Agent**) author notebook scripts and run them through
+  the **code-tools** MCP server with the loop:
   `plan → write code → validate-no-shell → run → inspect outputs/errors → summarize → update memory`.
 - Generated code lives in `code/`, plots in `plots/`, tables in `tables/`,
-  execution logs in `reports/`.
+  execution logs in `reports/`. The final notebook **embeds code and outputs that
+  already ran** — it is a reviewer-facing assembly, not a second execution path.
 
 > Architectural note: the *canonical* preprocessing/modeling execution still runs
 > through the tested preprocessing/modeling MCP tool servers; the Preprocessing and
@@ -176,20 +254,18 @@ true:
 <a name="architecture"></a>
 ## Architecture
 ```
-apps/web/            Next.js React UI (transparent timeline, tool calls, plots, notebook)
+apps/web/            Next.js React UI (same tabs as built-in dashboard)
 backend/
-  main.py            FastAPI app
+  main.py            FastAPI app (+ GET /api/tools)
   api/               REST endpoints (projects, upload, run, notebook, chat)
-  agents/            state.py, graph.py, code_authoring.py (code agents), nodes/*
+  agents/            state.py, graph.py, contracts.py, code_authoring.py, nodes/*
   mcp_client/        client.py (call_tool + logging), registry.py
-  services/          file_store, project_store, code_runner, notebook_builder,
-                     artifact_store, memory (working_context), llm
+  services/          artifact_store, memory, plotly_viz, checkpoint_store, csv_io, llm
   schemas/           Pydantic models
-  storage/artifacts/{project_id}/  code/ plots/ tables/ reports/ + *.md + *.json + working_context.md
-mcp_servers/         9 MCP tool servers (project understanding, prior art,
-                     data inspection, eda, preprocessing, modeling, experiment,
-                     notebook, code-tools)
+  storage/artifacts/{project_id}/  code/ plots/ tables/ reports/ + *.md + *.json
+mcp_servers/         12 MCP tool servers (see table above)
 demo/                synthetic churn dataset + brief
+docs/                PREPROCESSING_AND_EDA.md, dashboard screenshot
 ```
 
 The **LLM provider is abstract** (`backend/services/llm.py`). With no
@@ -218,9 +294,9 @@ python run.py
 
 The dashboard lets you, in one place: select a **task brief**, a **primary CSV**,
 and **optional additional files**, click **Start**, and watch the results appear
-across scrollable tabs — data cleaning decisions, EDA conclusions, chosen metrics
-(primary + up to two secondary, plus the mandatory train–valid overfit check),
-preprocessing & split, model comparison, the selected model, and conclusions.
+across scrollable tabs — data cleaning decisions, interactive Plotly EDA,
+preprocessing & split, model comparison, conclusions, and a full **MCP Calls**
+trace of every tool invocation (server, tool, status, duration, inputs).
 
 See the [screenshot at the top](#project2notebook) for a full-page view of the UI.
 
@@ -243,7 +319,8 @@ curl http://localhost:8000/api/tools
 To run a server over **real MCP stdio transport** (optional; needs `pip install mcp`):
 
 ```bash
-python -m mcp_servers.data_inspection_server     # or any *_server.py
+python -m mcp_servers.viz_server              # Plotly visualization tools
+python -m mcp_servers.data_quality_server     # or any *_server.py
 ```
 
 Each server file exposes the same tools via `serve_fastmcp`. To make the client
@@ -266,9 +343,9 @@ npm run dev
 ```
 
 Both UIs talk to the same backend API. Upload the brief + CSV (you can use the
-files in `demo/`), then click **Start**. You'll see the agent timeline, every MCP
-tool call, generated plots, the model comparison, the iteration history, the final
-test report, and a download of the notebook.
+files in `demo/`), then click **Start**. You'll see the agent timeline, the
+**MCP Calls** tab, generated Plotly charts, the model comparison, iteration
+history, the final test report, and a download of the notebook.
 
 <a name="run-demo"></a>
 ## How to run the demo
@@ -296,6 +373,8 @@ docker compose up --build
 ## Current limitations
 - **In-process MCP** by default (real stdio transport is available but not wired
   as the default).
+- **Dual execution paths** for some steps: canonical MCP tools plus standalone
+  `code/*.py` scripts for the notebook (convergence toward MCP-only is ongoing).
 - **Heuristic-first agents**: without an LLM key, reasoning is rule-based
   (intentionally, for reproducibility). LLM enrichment is optional.
 - **Single train/valid/test split** (no cross-validation) and a **small,
@@ -306,17 +385,22 @@ docker compose up --build
   anomaly detection**; forecasting/ranking/clustering are inferred but only
   partially modeled.
 - The runner is a **controlled subprocess runner**, not a hardened sandbox.
+- Large CSVs (>~100 MB) use sampling/chunked stats; tune `MAX_UPLOAD_BYTES`,
+  `CSV_ANALYSIS_MAX_ROWS`, and `CODE_TIMEOUT_SECONDS` in `.env`.
 
 <a name="future-work"></a>
 ## Future work
 - Real MCP stdio/remote transport as the default client.
+- Move remaining agent-side logic (EDA code generation, notebook assembly) fully
+  onto MCP tools; notebook as artifact replay only.
+- Conditional graph / run planner (`run_plan.json`) for adaptive step routing.
 - Cross-validation, richer hyperparameter search, model calibration & threshold
   tuning to a business cost.
 - Automatic temporal/aggregation feature engineering (lags, rolling windows) with
   re-audited leakage checks.
 - A pluggable web-search provider for the Prior Art Agent.
 - Background/streaming runs with live timeline updates.
-- Subgroup modeling (e.g. per-platform models) when justified by EDA.
+- Iteration sub-checkpoints inside the improvement loop.
 
 ---
 

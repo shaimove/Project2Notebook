@@ -13,14 +13,22 @@ notebook and as a sanity check), via the code-tools layer.
 from __future__ import annotations
 
 from backend.agents import code_authoring
+from backend.agents.contracts import NodeContract
 from backend.agents.state import DataScientist
 from backend.mcp_client.client import MCPClient
 from backend.schemas.experiment import PreprocessingPlan, SplitReport
 from backend.schemas.validation import validate_model
 from backend.services import artifact_store, memory
-from backend.services.plotly_viz import generate_split_target_plotly
 
 PP = "preprocessing-tools"
+VIZ = "viz-tools"
+
+CONTRACT = NodeContract(
+    requires=("project_spec.json", "data_audit_report.json", "eda_findings.json"),
+    requires_state=("project_id", "csv_paths", "project_spec", "data_audit_report", "eda_findings"),
+    produces=("preprocessing_plan.json", "split_report.json", "preprocessing_decisions.md"),
+    produces_state=("preprocessing_plan", "split_report"),
+)
 
 
 def run(state: DataScientist, client: MCPClient) -> DataScientist:
@@ -64,9 +72,13 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
 
     target = (spec.get("targets") or [None])[0] or audit.get("target")
     scaling = plan.get("scaling_strategy") or "standard"
-    split_viz = generate_split_target_plotly(
-        project_id, csv_path, target, split_report, scaling_method=scaling,
-    ) if target else {"ok": False}
+    split_viz = client.call_tool(VIZ, "generate_split_target_plotly_html", {
+        "project_id": project_id,
+        "csv_path": csv_path,
+        "target": target,
+        "split_meta": split_report,
+        "scaling_method": scaling,
+    }) if target else {"ok": False}
     if split_viz.get("ok"):
         state["split_plotly_html"] = split_viz.get("html_name")
         state["split_ratios"] = split_viz.get("ratios")

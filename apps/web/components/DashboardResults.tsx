@@ -20,6 +20,7 @@ const TABS = [
   { id: "preprocessing", label: "Split Data" },
   { id: "models", label: "Models" },
   { id: "conclusions", label: "Conclusions" },
+  { id: "mcp", label: "MCP Calls" },
   { id: "pipeline", label: "Pipeline Log" },
 ] as const;
 
@@ -142,6 +143,9 @@ export function DashboardResults({
             onClick={() => setTab(t.id)}
           >
             {t.label}
+            {t.id === "mcp" && (result.tool_calls?.length ?? 0) > 0
+              ? ` (${result.tool_calls!.length})`
+              : ""}
           </button>
         ))}
       </div>
@@ -183,14 +187,26 @@ export function DashboardResults({
 
         {tab === "quality" && (
           <ScrollBox maxHeight="100%">
-            {artifacts.data_quality_report ? (
-              <AgentDecisionsPanel
-                sections={["quality"]}
-                dataQuality={artifacts.data_quality_report}
-              />
-            ) : (
-              <p className="muted">No data quality report available.</p>
-            )}
+            <div className="tab-section">
+              {project && artifacts.quality_plotly_html && (
+                <div className="card">
+                  <h2>Data Quality Overview (Plotly)</h2>
+                  <iframe
+                    title="Data Quality Plotly"
+                    className="plotly-frame"
+                    src={`/api/projects/${project.project_id}/plots/${encodeURIComponent(artifacts.quality_plotly_html)}`}
+                  />
+                </div>
+              )}
+              {artifacts.data_quality_report ? (
+                <AgentDecisionsPanel
+                  sections={["quality"]}
+                  dataQuality={artifacts.data_quality_report}
+                />
+              ) : (
+                <p className="muted">No data quality report available.</p>
+              )}
+            </div>
           </ScrollBox>
         )}
 
@@ -342,6 +358,12 @@ export function DashboardResults({
           </ScrollBox>
         )}
 
+        {tab === "mcp" && (
+          <ScrollBox maxHeight="100%">
+            <ToolCallViewer toolCalls={result.tool_calls || []} />
+          </ScrollBox>
+        )}
+
         {tab === "pipeline" && (
           <ScrollBox maxHeight="100%">
             <div className="tab-section">
@@ -354,7 +376,10 @@ export function DashboardResults({
                   </ScrollBox>
                 </div>
               )}
-              <ToolCallViewer toolCalls={result.tool_calls || []} />
+              <p className="muted small">
+                Full MCP trace ({result.tool_calls?.length ?? 0} calls) — see the{" "}
+                <strong>MCP Calls</strong> tab.
+              </p>
             </div>
           </ScrollBox>
         )}

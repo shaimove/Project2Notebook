@@ -379,3 +379,117 @@ def generate_split_target_plotly(
     })
 
     return {"ok": True, "html_path": str(out), "html_name": out.name, "ratios": ratios}
+
+
+def generate_data_quality_plotly(
+    project_id: str,
+    report: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Interactive Plotly dashboard for data-quality column profiles and issues."""
+    try:
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
+    except ImportError:
+        return {"ok": False, "error": "plotly not installed"}
+
+    profiles = list(report.get("column_profiles") or [])
+    issues = list(report.get("issues") or [])
+    if not profiles and not issues:
+        return {"ok": False, "error": "no column profiles or issues in report"}
+
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        subplot_titles=("Missing % by column", "Issues by severity"),
+        horizontal_spacing=0.12,
+    )
+
+    if profiles:
+        ranked = sorted(profiles, key=lambda p: float(p.get("pct_missing") or 0), reverse=True)[:25]
+        names = [str(p.get("name", "?")) for p in ranked]
+        missing = [round(float(p.get("pct_missing") or 0) * 100, 2) for p in ranked]
+        colors = [
+            "#EF553B" if m >= 25 else "#FFA15A" if m >= 5 else "#636EFA"
+            for m in missing
+        ]
+        fig.add_trace(
+            go.Bar(x=names, y=missing, marker_color=colors, showlegend=False),
+            row=1,
+            col=1,
+        )
+        fig.update_yaxes(title_text="missing %", row=1, col=1)
+        fig.update_xaxes(tickangle=-45, row=1, col=1)
+
+    if issues:
+        from collections import Counter
+
+        sev = Counter(str(i.get("severity") or "info") for i in issues)
+        order = ["critical", "warning", "info"]
+        labels = [s for s in order if sev.get(s)] + [s for s in sev if s not in order]
+        counts = [sev[s] for s in labels]
+        palette = {"critical": "#EF553B", "warning": "#FFA15A", "info": "#636EFA"}
+        fig.add_trace(
+            go.Bar(
+                x=labels,
+                y=counts,
+                marker_color=[palette.get(l, "#AB63FA") for l in labels],
+                showlegend=False,
+            ),
+            row=1,
+            col=2,
+        )
+        fig.update_yaxes(title_text="count", row=1, col=2)
+
+    n_model = len(report.get("modeling_features") or [])
+    n_excl = len(report.get("excluded_columns") or [])
+    fig.update_layout(
+        height=460,
+        title_text=(
+            f"Data Quality Overview · {n_model} modeling features · "
+            f"{n_excl} excluded · {len(issues)} issue(s)"
+        ),
+        bargap=0.25,
+    )
+
+    out = artifact_store.plots_dir(project_id) / "data_quality_overview.html"
+    fig.write_html(str(out), include_plotlyjs="cdn", full_html=True)
+    return {"ok": True, "html_path": str(out), "html_name": out.name}
+
+
+def generate_audit_missingness_plotly(
+    project_id: str,
+    audit: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Bar chart of missing fractions from the data audit report."""
+    try:
+        import plotly.graph_objects as go
+    except ImportError:
+        return {"ok": False, "error": "plotly not installed"}
+
+    columns = audit.get("columns") or []
+    if not columns:
+        return {"ok": False, "error": "no columns in audit report"}
+
+    ranked = sorted(columns, key=lambda c: float(c.get("missing_frac") or 0), reverse=True)[:30]
+    names = [str(c.get("name", "?")) for c in ranked]
+    missing = [round(float(c.get("missing_frac") or 0) * 100, 2) for c in ranked]
+
+    fig = go.Figure(
+        go.Bar(
+            x=names,
+            y=missing,
+            marker_color=["#EF553B" if m >= 25 else "#636EFA" for m in missing],
+        )
+    )
+    fig.update_layout(
+        title="Missing values by column (Data Audit)",
+        xaxis_title="column",
+        yaxis_title="missing %",
+        height=420,
+        bargap=0.2,
+    )
+    fig.update_xaxes(tickangle=-45)
+
+    out = artifact_store.plots_dir(project_id) / "audit_missingness.html"
+    fig.write_html(str(out), include_plotlyjs="cdn", full_html=True)
+    return {"ok": True, "html_path": str(out), "html_name": out.name}

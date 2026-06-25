@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
+from backend.agents.contracts import NodeContract
 from backend.agents.state import DataScientist
 from backend.mcp_client.client import MCPClient
 from backend.schemas.data_quality import DataQualityReport
@@ -14,6 +15,14 @@ from backend.schemas.validation import validate_model
 from backend.services import artifact_store, memory
 
 DQ = "data-quality-tools"
+VIZ = "viz-tools"
+
+CONTRACT = NodeContract(
+    requires=("project_spec.json",),
+    requires_state=("project_id", "csv_paths", "project_spec"),
+    produces=("data_quality_report.json", "data_quality.md"),
+    produces_state=("data_quality_report", "modeling_features", "excluded_columns"),
+)
 
 
 def run(state: DataScientist, client: MCPClient) -> DataScientist:
@@ -76,6 +85,15 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
 
     artifact_store.write_json(project_id, "data_quality_report.json", report_dict)
     artifact_store.write_text(project_id, "data_quality.md", _render_md(report_dict))
+
+    dq_viz = client.call_tool(VIZ, "generate_data_quality_plotly_html", {
+        "project_id": project_id,
+        "report": report_dict,
+    })
+    if dq_viz.get("ok"):
+        report_dict["quality_plotly_html"] = dq_viz.get("html_name")
+        state["quality_plotly_html"] = dq_viz.get("html_name")
+        artifact_store.write_json(project_id, "data_quality_report.json", report_dict)
 
     state["data_quality_report"] = report_dict
 

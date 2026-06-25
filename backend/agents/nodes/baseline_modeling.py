@@ -13,6 +13,7 @@ from typing import Any, Dict, List
 import pandas as pd
 
 from backend.agents import code_authoring
+from backend.agents.contracts import NodeContract
 from backend.agents.state import DataScientist
 from backend.mcp_client.client import MCPClient
 from backend.mcp_client.tool_result import optional_tool_result
@@ -30,6 +31,14 @@ _TOOLS = [
     ("train_boosting_model", "boosting"),
     ("train_svm_model", "svm"),
 ]
+
+
+CONTRACT = NodeContract(
+    requires=("preprocessing_plan.json", "split_report.json"),
+    requires_state=("project_id", "preprocessing_plan", "split_report"),
+    produces=("baseline_results.json", "model_results.json", "modeling_report.md"),
+    produces_state=("baseline_results", "model_comparison", "best_validation_score", "best_pipeline_id"),
+)
 
 
 def run(state: DataScientist, client: MCPClient) -> DataScientist:

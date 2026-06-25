@@ -21890,5 +21890,2200 @@
       "summary": "Task: binary_classification on target 'churned'. Selected model: linear. Test roc_auc = 0.985. Goal met: yes.",
       "errors": []
     }
+  },
+  "c9cd466c8fd3": {
+    "project_id": "c9cd466c8fd3",
+    "name": "ML Project",
+    "description": null,
+    "created_at": "2026-06-25T10:20:35.821150+00:00",
+    "project_document_path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/project_description.md",
+    "csv_paths": [
+      "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/sample_dataset.csv"
+    ],
+    "pdf_paths": [],
+    "status": "completed",
+    "run_result": {
+      "project_id": "c9cd466c8fd3",
+      "run_id": "4db73252a2fe436c",
+      "resumed_from_step": null,
+      "status": "completed",
+      "timeline": [
+        {
+          "step": 1,
+          "title": "Project Understanding (plan)",
+          "status": "completed",
+          "detail": "Task: binary_classification | target: churned",
+          "duration_ms": 2218
+        },
+        {
+          "step": 2,
+          "title": "Prior Art Search (research)",
+          "status": "completed",
+          "detail": "enabled",
+          "duration_ms": 2
+        },
+        {
+          "step": 3,
+          "title": "Data Quality Review (review+code)",
+          "status": "completed",
+          "detail": "2 issue(s) | output: cleaned_sample_dataset.csv",
+          "duration_ms": 753
+        },
+        {
+          "step": 4,
+          "title": "Data Audit (review)",
+          "status": "completed",
+          "detail": "1200 rows x 10 cols",
+          "duration_ms": 57
+        },
+        {
+          "step": 5,
+          "title": "EDA Planning (plan)",
+          "status": "completed",
+          "detail": "",
+          "duration_ms": 3
+        },
+        {
+          "step": 6,
+          "title": "EDA Code Agent (code)",
+          "status": "completed",
+          "detail": "6 plots, 5 tables",
+          "duration_ms": 3479
+        },
+        {
+          "step": 7,
+          "title": "EDA Review (review)",
+          "status": "completed",
+          "detail": "4 important, 1 drop",
+          "duration_ms": 9724
+        },
+        {
+          "step": 8,
+          "title": "Preprocessing Planner + Code Agent (plan+code)",
+          "status": "completed",
+          "detail": "split=time_based (720/240/240)",
+          "duration_ms": 4001
+        },
+        {
+          "step": 9,
+          "title": "Modeling + Code Agent (code)",
+          "status": "completed",
+          "detail": "6 models compared",
+          "duration_ms": 6754
+        },
+        {
+          "step": 10,
+          "title": "First Conclusion (review)",
+          "status": "completed",
+          "detail": "",
+          "duration_ms": 836
+        },
+        {
+          "step": 11,
+          "title": "Iteration + Code Agent (code)",
+          "status": "completed",
+          "detail": "1 iteration(s)",
+          "duration_ms": 601
+        },
+        {
+          "step": 12,
+          "title": "Leakage Review (review)",
+          "status": "completed",
+          "detail": "",
+          "duration_ms": 3
+        },
+        {
+          "step": 13,
+          "title": "Final Test Evaluation (review)",
+          "status": "completed",
+          "detail": "final model: linear",
+          "duration_ms": 18
+        },
+        {
+          "step": 14,
+          "title": "Notebook Author (code)",
+          "status": "completed",
+          "detail": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/notebooks/c9cd466c8fd3_final_notebook.ipynb",
+          "duration_ms": 61
+        }
+      ],
+      "tool_calls": [
+        {
+          "server": "project-understanding-tools",
+          "tool": "parse_project_document",
+          "input": {
+            "path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/project_description.md"
+          },
+          "output_summary": "keys: text, n_chars, headings",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "data-inspection-tools",
+          "tool": "load_dataset",
+          "input": {
+            "csv_path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/sample_dataset.csv"
+          },
+          "output_summary": "keys: n_rows, n_cols, columns, dtypes, file_bytes, sampled_for_analysis",
+          "status": "success",
+          "duration_ms": 29
+        },
+        {
+          "server": "project-understanding-tools",
+          "tool": "identify_targets",
+          "input": {
+            "text": "# Project Brief: Subscription Churn Prediction\n\n## Business problem\nOur subscription product is losing customers. The growth team wants to **predict\nwhich customers are likely to churn** so they can t\u2026 (+2248 chars)",
+            "columns": [
+              "customer_id",
+              "timestamp",
+              "platform",
+              "region",
+              "num_sessions_last_7d",
+              "num_sessions_last_30d",
+              "avg_session_duration",
+              "num_errors",
+              "subscription_tier",
+              "num_sessions_next_7d",
+              "churned"
+            ]
+          },
+          "output_summary": "keys: targets",
+          "status": "success",
+          "duration_ms": 1
+        },
+        {
+          "server": "data-inspection-tools",
+          "tool": "inspect_target_distribution",
+          "input": {
+            "csv_path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/sample_dataset.csv",
+            "target": "churned"
+          },
+          "output_summary": "keys: target, dtype, n_missing, kind, counts, proportions \u2026",
+          "status": "success",
+          "duration_ms": 6
+        },
+        {
+          "server": "project-understanding-tools",
+          "tool": "infer_ml_task",
+          "input": {
+            "text": "# Project Brief: Subscription Churn Prediction\n\n## Business problem\nOur subscription product is losing customers. The growth team wants to **predict\nwhich customers are likely to churn** so they can t\u2026 (+2248 chars)",
+            "target_kind": "categorical",
+            "n_classes": 2
+          },
+          "output_summary": "keys: ml_task_type",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "project-understanding-tools",
+          "tool": "identify_business_goals",
+          "input": {
+            "text": "# Project Brief: Subscription Churn Prediction\n\n## Business problem\nOur subscription product is losing customers. The growth team wants to **predict\nwhich customers are likely to churn** so they can t\u2026 (+2248 chars)"
+          },
+          "output_summary": "keys: business_goal",
+          "status": "success",
+          "duration_ms": 8
+        },
+        {
+          "server": "project-understanding-tools",
+          "tool": "suggest_metrics",
+          "input": {
+            "ml_task_type": "binary_classification"
+          },
+          "output_summary": "keys: primary_metric, secondary_metrics",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "data-inspection-tools",
+          "tool": "detect_time_columns",
+          "input": {
+            "csv_path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/sample_dataset.csv"
+          },
+          "output_summary": "keys: time_columns",
+          "status": "success",
+          "duration_ms": 18
+        },
+        {
+          "server": "data-inspection-tools",
+          "tool": "detect_entity_columns",
+          "input": {
+            "csv_path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/sample_dataset.csv"
+          },
+          "output_summary": "keys: entity_columns, unique_id_like",
+          "status": "success",
+          "duration_ms": 5
+        },
+        {
+          "server": "project-understanding-tools",
+          "tool": "identify_split_strategy",
+          "input": {
+            "text": "# Project Brief: Subscription Churn Prediction\n\n## Business problem\nOur subscription product is losing customers. The growth team wants to **predict\nwhich customers are likely to churn** so they can t\u2026 (+2248 chars)",
+            "has_time_component": true,
+            "has_groups": true,
+            "ml_task_type": "binary_classification"
+          },
+          "output_summary": "keys: recommended_split",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "project-understanding-tools",
+          "tool": "identify_leakage_risks",
+          "input": {
+            "text": "# Project Brief: Subscription Churn Prediction\n\n## Business problem\nOur subscription product is losing customers. The growth team wants to **predict\nwhich customers are likely to churn** so they can t\u2026 (+2248 chars)",
+            "columns": [
+              "customer_id",
+              "timestamp",
+              "platform",
+              "region",
+              "num_sessions_last_7d",
+              "num_sessions_last_30d",
+              "avg_session_duration",
+              "num_errors",
+              "subscription_tier",
+              "num_sessions_next_7d",
+              "churned"
+            ]
+          },
+          "output_summary": "keys: leakage_risks",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "prior-art-tools",
+          "tool": "search_prior_art",
+          "input": {
+            "spec": "<dict with 14 items>",
+            "enable_web_search": true,
+            "pdf_texts": []
+          },
+          "output_summary": "keys: enabled, message, searched_queries, sources",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "prior-art-tools",
+          "tool": "summarize_common_approaches",
+          "input": {
+            "ml_task_type": "binary_classification"
+          },
+          "output_summary": "keys: source, common_models, common_feature_engineering, common_preprocessing, common_split_strategies, common_metrics \u2026",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "prior-art-tools",
+          "tool": "extract_candidate_strategies",
+          "input": {
+            "approaches": "<dict with 9 items>",
+            "pdf_texts": []
+          },
+          "output_summary": "keys: ideas_to_test, ideas_to_ignore",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "data-quality-tools",
+          "tool": "scan_data_quality",
+          "input": {
+            "csv_path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/sample_dataset.csv",
+            "spec": "<dict with 14 items>"
+          },
+          "output_summary": "keys: summary, original_csv_path, n_rows_before, n_cols_before, target_column, task_type_hint \u2026",
+          "status": "success",
+          "duration_ms": 67
+        },
+        {
+          "server": "data-quality-tools",
+          "tool": "apply_remediation",
+          "input": {
+            "csv_path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/sample_dataset.csv",
+            "plan": "<dict with 8 items>",
+            "project_id": "c9cd466c8fd3"
+          },
+          "output_summary": "keys: cleaned_csv_path, n_rows_after, n_cols_after, actions_applied, columns",
+          "status": "success",
+          "duration_ms": 30
+        },
+        {
+          "server": "viz-tools",
+          "tool": "generate_data_quality_plotly_html",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "report": "<dict with 19 items>"
+          },
+          "output_summary": "keys: ok, html_path, html_name",
+          "status": "success",
+          "duration_ms": 652
+        },
+        {
+          "server": "data-inspection-tools",
+          "tool": "profile_dataset",
+          "input": {
+            "csv_path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/cleaned_sample_dataset.csv"
+          },
+          "output_summary": "keys: n_rows, n_cols, analysis_sample_rows, sampled_for_analysis, columns",
+          "status": "success",
+          "duration_ms": 15
+        },
+        {
+          "server": "data-inspection-tools",
+          "tool": "summarize_missing_values",
+          "input": {
+            "csv_path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/cleaned_sample_dataset.csv"
+          },
+          "output_summary": "keys: per_column, per_column_pct, columns_with_missing, near_empty_columns",
+          "status": "success",
+          "duration_ms": 4
+        },
+        {
+          "server": "data-inspection-tools",
+          "tool": "detect_invalid_values",
+          "input": {
+            "csv_path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/cleaned_sample_dataset.csv"
+          },
+          "output_summary": "keys: invalid_value_issues",
+          "status": "success",
+          "duration_ms": 4
+        },
+        {
+          "server": "data-inspection-tools",
+          "tool": "detect_duplicates",
+          "input": {
+            "csv_path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/cleaned_sample_dataset.csv"
+          },
+          "output_summary": "keys: n_duplicate_rows",
+          "status": "success",
+          "duration_ms": 5
+        },
+        {
+          "server": "data-inspection-tools",
+          "tool": "detect_time_columns",
+          "input": {
+            "csv_path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/cleaned_sample_dataset.csv"
+          },
+          "output_summary": "keys: time_columns",
+          "status": "success",
+          "duration_ms": 6
+        },
+        {
+          "server": "data-inspection-tools",
+          "tool": "detect_entity_columns",
+          "input": {
+            "csv_path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/cleaned_sample_dataset.csv"
+          },
+          "output_summary": "keys: entity_columns, unique_id_like",
+          "status": "success",
+          "duration_ms": 3
+        },
+        {
+          "server": "data-inspection-tools",
+          "tool": "inspect_target_distribution",
+          "input": {
+            "csv_path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/cleaned_sample_dataset.csv",
+            "target": "churned"
+          },
+          "output_summary": "keys: target, dtype, n_missing, kind, counts, proportions \u2026",
+          "status": "success",
+          "duration_ms": 4
+        },
+        {
+          "server": "viz-tools",
+          "tool": "generate_audit_missingness_plotly_html",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "audit": "<dict with 15 items>"
+          },
+          "output_summary": "keys: ok, html_path, html_name",
+          "status": "success",
+          "duration_ms": 10
+        },
+        {
+          "server": "code-tools",
+          "tool": "validate_no_shell_commands",
+          "input": {
+            "code": "import json, warnings, os\nwarnings.filterwarnings(\"ignore\")\nimport numpy as np\nimport pandas as pd\nimport matplotlib\nmatplotlib.use(\"Agg\")\nimport matplotlib.pyplot as plt\nos.makedirs(\"plots\", exist_ok\u2026 (+5294 chars)"
+          },
+          "output_summary": "keys: ok, violations",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "code-tools",
+          "tool": "write_python_file",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "filename": "eda.py",
+            "code": "import json, warnings, os\nwarnings.filterwarnings(\"ignore\")\nimport numpy as np\nimport pandas as pd\nimport matplotlib\nmatplotlib.use(\"Agg\")\nimport matplotlib.pyplot as plt\nos.makedirs(\"plots\", exist_ok\u2026 (+5294 chars)"
+          },
+          "output_summary": "keys: path, filename, written, validation",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "code-tools",
+          "tool": "run_python_file",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "filename": "eda.py"
+          },
+          "output_summary": "keys: ok, stdout, stderr, returncode, duration_ms, code_path \u2026",
+          "status": "success",
+          "duration_ms": 3475
+        },
+        {
+          "server": "viz-tools",
+          "tool": "generate_eda_plotly_html",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "csv_path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/cleaned_sample_dataset.csv",
+            "features": [
+              "platform",
+              "num_sessions_last_7d",
+              "num_sessions_last_30d",
+              "avg_session_duration",
+              "num_errors",
+              "subscription_tier",
+              "num_sessions_next_7d"
+            ],
+            "target": "churned",
+            "task_type": "binary_classification"
+          },
+          "output_summary": "keys: ok, html_path, html_name, n_features, conclusions",
+          "status": "success",
+          "duration_ms": 136
+        },
+        {
+          "server": "eda-review-tools",
+          "tool": "analyze_eda_tables",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "data_audit": "<dict with 15 items>",
+            "spec": "<dict with 14 items>"
+          },
+          "output_summary": "keys: feature_insights, important_columns, features_to_drop, features_to_watch, features_to_engineer, multicollinear_groups \u2026",
+          "status": "success",
+          "duration_ms": 12
+        },
+        {
+          "server": "eda-review-tools",
+          "tool": "list_eda_plot_inventory",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "plot_names": [
+              "correlation.png",
+              "feature_distributions.png",
+              "feature_target.png",
+              "missingness.png",
+              "target_distribution.png",
+              "time_series.png"
+            ]
+          },
+          "output_summary": "keys: plots",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "preprocessing-tools",
+          "tool": "create_preprocessing_plan",
+          "input": {
+            "profile": "<dict with 1 items>",
+            "spec": "<dict with 14 items>",
+            "eda_findings": "<dict with 12 items>"
+          },
+          "output_summary": "keys: drop_columns, keep_columns, feature_engineering, numeric_columns, categorical_columns, missing_value_strategy \u2026",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "preprocessing-tools",
+          "tool": "check_preprocessing_leakage",
+          "input": {
+            "plan": "<dict with 12 items>",
+            "spec": "<dict with 14 items>"
+          },
+          "output_summary": "keys: leakage_warnings, fit_on_train_only, test_held_out, ok",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "preprocessing-tools",
+          "tool": "build_train_valid_test_split",
+          "input": {
+            "csv_path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/cleaned_sample_dataset.csv",
+            "plan": "<dict with 12 items>",
+            "spec": "<dict with 14 items>",
+            "project_id": "c9cd466c8fd3"
+          },
+          "output_summary": "keys: strategy, train_rows, valid_rows, test_rows, group_column, time_column \u2026",
+          "status": "success",
+          "duration_ms": 19
+        },
+        {
+          "server": "preprocessing-tools",
+          "tool": "fit_preprocessor_on_train",
+          "input": {
+            "project_id": "c9cd466c8fd3"
+          },
+          "output_summary": "keys: fitted_on, numeric_columns, categorical_columns, n_features_out",
+          "status": "success",
+          "duration_ms": 61
+        },
+        {
+          "server": "preprocessing-tools",
+          "tool": "transform_valid_test",
+          "input": {
+            "project_id": "c9cd466c8fd3"
+          },
+          "output_summary": "keys: train_shape, valid_shape, test_shape, n_features",
+          "status": "success",
+          "duration_ms": 26
+        },
+        {
+          "server": "viz-tools",
+          "tool": "generate_split_target_plotly_html",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "csv_path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/cleaned_sample_dataset.csv",
+            "target": "churned",
+            "split_meta": "<dict with 9 items>",
+            "scaling_method": "standard"
+          },
+          "output_summary": "keys: ok, html_path, html_name, ratios",
+          "status": "success",
+          "duration_ms": 39
+        },
+        {
+          "server": "code-tools",
+          "tool": "validate_no_shell_commands",
+          "input": {
+            "code": "import json, warnings, os\nwarnings.filterwarnings(\"ignore\")\nimport numpy as np\nimport pandas as pd\nimport matplotlib\nmatplotlib.use(\"Agg\")\nimport matplotlib.pyplot as plt\nos.makedirs(\"plots\", exist_ok\u2026 (+2697 chars)"
+          },
+          "output_summary": "keys: ok, violations",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "code-tools",
+          "tool": "write_python_file",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "filename": "preprocessing.py",
+            "code": "import json, warnings, os\nwarnings.filterwarnings(\"ignore\")\nimport numpy as np\nimport pandas as pd\nimport matplotlib\nmatplotlib.use(\"Agg\")\nimport matplotlib.pyplot as plt\nos.makedirs(\"plots\", exist_ok\u2026 (+2697 chars)"
+          },
+          "output_summary": "keys: path, filename, written, validation",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "code-tools",
+          "tool": "run_python_file",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "filename": "preprocessing.py"
+          },
+          "output_summary": "keys: ok, stdout, stderr, returncode, duration_ms, code_path \u2026",
+          "status": "success",
+          "duration_ms": 3847
+        },
+        {
+          "server": "modeling-tools",
+          "tool": "train_dummy_baseline",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "spec": "<dict with 14 items>"
+          },
+          "output_summary": "keys: model_name, display_name, family, train_metrics, valid_metrics, primary_metric \u2026",
+          "status": "success",
+          "duration_ms": 11
+        },
+        {
+          "server": "modeling-tools",
+          "tool": "train_linear_model",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "spec": "<dict with 14 items>"
+          },
+          "output_summary": "keys: model_name, display_name, family, train_metrics, valid_metrics, primary_metric \u2026",
+          "status": "success",
+          "duration_ms": 42
+        },
+        {
+          "server": "modeling-tools",
+          "tool": "train_tree_model",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "spec": "<dict with 14 items>"
+          },
+          "output_summary": "keys: model_name, display_name, family, train_metrics, valid_metrics, primary_metric \u2026",
+          "status": "success",
+          "duration_ms": 174
+        },
+        {
+          "server": "modeling-tools",
+          "tool": "train_random_forest",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "spec": "<dict with 14 items>"
+          },
+          "output_summary": "keys: model_name, display_name, family, train_metrics, valid_metrics, primary_metric \u2026",
+          "status": "success",
+          "duration_ms": 1048
+        },
+        {
+          "server": "modeling-tools",
+          "tool": "train_boosting_model",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "spec": "<dict with 14 items>"
+          },
+          "output_summary": "keys: model_name, display_name, family, train_metrics, valid_metrics, primary_metric \u2026",
+          "status": "success",
+          "duration_ms": 1763
+        },
+        {
+          "server": "modeling-tools",
+          "tool": "train_svm_model",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "spec": "<dict with 14 items>"
+          },
+          "output_summary": "keys: model_name, display_name, family, train_metrics, valid_metrics, primary_metric \u2026",
+          "status": "success",
+          "duration_ms": 115
+        },
+        {
+          "server": "modeling-tools",
+          "tool": "compare_models",
+          "input": {
+            "results": "<list with 6 items>"
+          },
+          "output_summary": "keys: rows, best_model, primary_metric",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "code-tools",
+          "tool": "validate_no_shell_commands",
+          "input": {
+            "code": "import json, warnings, os\nwarnings.filterwarnings(\"ignore\")\nimport numpy as np\nimport pandas as pd\nimport matplotlib\nmatplotlib.use(\"Agg\")\nimport matplotlib.pyplot as plt\nos.makedirs(\"plots\", exist_ok\u2026 (+4048 chars)"
+          },
+          "output_summary": "keys: ok, violations",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "code-tools",
+          "tool": "write_python_file",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "filename": "modeling.py",
+            "code": "import json, warnings, os\nwarnings.filterwarnings(\"ignore\")\nimport numpy as np\nimport pandas as pd\nimport matplotlib\nmatplotlib.use(\"Agg\")\nimport matplotlib.pyplot as plt\nos.makedirs(\"plots\", exist_ok\u2026 (+4048 chars)"
+          },
+          "output_summary": "keys: path, filename, written, validation",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "code-tools",
+          "tool": "run_python_file",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "filename": "modeling.py"
+          },
+          "output_summary": "keys: ok, stdout, stderr, returncode, duration_ms, code_path \u2026",
+          "status": "success",
+          "duration_ms": 3587
+        },
+        {
+          "server": "experiment-tools",
+          "tool": "suggest_next_iteration",
+          "input": {
+            "spec": "<dict with 14 items>",
+            "prior_art": "<dict with 13 items>",
+            "data_audit": "<dict with 15 items>",
+            "best_result": {
+              "model": "linear",
+              "score": 0.9781404174573055
+            },
+            "iteration": 1
+          },
+          "output_summary": "keys: action, model_name, params, hypothesis, motivation, prior_art_support \u2026",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "modeling-tools",
+          "tool": "train_random_forest",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "spec": "<dict with 14 items>",
+            "params": {
+              "class_weight": "balanced"
+            }
+          },
+          "output_summary": "keys: model_name, display_name, family, train_metrics, valid_metrics, primary_metric \u2026",
+          "status": "success",
+          "duration_ms": 524
+        },
+        {
+          "server": "code-tools",
+          "tool": "validate_no_shell_commands",
+          "input": {
+            "code": "# Iteration 1 \u2014 reproducible change snippet (executed via modeling-tools in the run)\n# Hypothesis: Balancing class weights will improve minority-class detection.\n# Re-train the 'random_forest' family \u2026 (+216 chars)"
+          },
+          "output_summary": "keys: ok, violations",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "code-tools",
+          "tool": "write_python_file",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "filename": "iteration_1.py",
+            "code": "# Iteration 1 \u2014 reproducible change snippet (executed via modeling-tools in the run)\n# Hypothesis: Balancing class weights will improve minority-class detection.\n# Re-train the 'random_forest' family \u2026 (+216 chars)"
+          },
+          "output_summary": "keys: path, filename, written, validation",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "code-tools",
+          "tool": "run_python_file",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "filename": "iteration_1.py"
+          },
+          "output_summary": "keys: ok, stdout, stderr, returncode, duration_ms, code_path \u2026",
+          "status": "success",
+          "duration_ms": 68
+        },
+        {
+          "server": "experiment-tools",
+          "tool": "stop_iteration_decision",
+          "input": {
+            "iteration": 1,
+            "max_iterations": 3,
+            "relative_improvement": -0.009428105843097632,
+            "min_relative_improvement": 0.05,
+            "overfit_suspected": false,
+            "hypothesis_supported": true
+          },
+          "output_summary": "keys: stop, reason",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "preprocessing-tools",
+          "tool": "check_preprocessing_leakage",
+          "input": {
+            "plan": "<dict with 12 items>",
+            "spec": "<dict with 14 items>"
+          },
+          "output_summary": "keys: leakage_warnings, fit_on_train_only, test_held_out, ok",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "modeling-tools",
+          "tool": "evaluate_model",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "spec": "<dict with 14 items>",
+            "model_name": "best",
+            "split": "test"
+          },
+          "output_summary": "keys: model_name, split, metrics, primary_metric, score, higher_is_better",
+          "status": "success",
+          "duration_ms": 9
+        },
+        {
+          "server": "modeling-tools",
+          "tool": "evaluate_model",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "spec": "<dict with 14 items>",
+            "model_name": "best",
+            "split": "valid"
+          },
+          "output_summary": "keys: model_name, split, metrics, primary_metric, score, higher_is_better",
+          "status": "success",
+          "duration_ms": 4
+        },
+        {
+          "server": "notebook-tools",
+          "tool": "update_notebook",
+          "input": {
+            "project_id": "c9cd466c8fd3",
+            "spec": "<dict with 2 items>"
+          },
+          "output_summary": "keys: n_sections",
+          "status": "success",
+          "duration_ms": 0
+        },
+        {
+          "server": "notebook-tools",
+          "tool": "export_final_notebook",
+          "input": {
+            "project_id": "c9cd466c8fd3"
+          },
+          "output_summary": "keys: notebook_path, n_sections",
+          "status": "success",
+          "duration_ms": 54
+        }
+      ],
+      "artifacts": {
+        "project_spec": {
+          "business_goal": "- Build a model that predicts whether a customer will churn.",
+          "ml_task_type": "binary_classification",
+          "targets": [
+            "churned"
+          ],
+          "unit_of_prediction": "one prediction per avg_session_duration",
+          "unit_of_analysis": "avg_session_duration",
+          "aggregation": "",
+          "has_time_component": true,
+          "recommended_split": "time_based",
+          "leakage_risks": [
+            "Column 'num_sessions_next_7d' may encode information from after the prediction point.",
+            "Brief explicitly warns about leakage from future activity windows."
+          ],
+          "primary_metric": "roc_auc",
+          "secondary_metrics": [
+            "f1",
+            "accuracy",
+            "pr_auc"
+          ],
+          "success_criteria": "Beat the dummy baseline and reach a usefully high roc_auc on held-out data.",
+          "assumptions": [
+            "The provided CSV reflects the production data distribution.",
+            "The target column is correctly identified from the brief."
+          ],
+          "open_questions": [
+            "Is there an explicit prediction time / cutoff for each row?",
+            "Are there business costs that should weight false positives vs negatives?"
+          ]
+        },
+        "prior_art_report": {
+          "enabled": true,
+          "message": "ENABLE_WEB_SEARCH=true but no web-search provider is wired in this MVP. Returning curated offline knowledge instead. Implement a provider in prior_art_server.search_prior_art.",
+          "searched_queries": [
+            "common approaches for binary classification",
+            "feature engineering for - Build a model that predicts whether a customer will churn.",
+            "leakage pitfalls and validation strategy"
+          ],
+          "sources": [],
+          "common_models": [
+            "Logistic Regression",
+            "Random Forest",
+            "Gradient Boosting (XGBoost/LightGBM)",
+            "SVM"
+          ],
+          "common_feature_engineering": [
+            "Aggregate behavioural counts over time windows",
+            "Ratios between recent and long-term activity",
+            "Recency/frequency features",
+            "Target/mean encoding for high-cardinality categoricals (fit on train only)"
+          ],
+          "common_preprocessing": [
+            "Median imputation",
+            "One-hot / target encoding",
+            "Standard scaling for linear/SVM"
+          ],
+          "common_split_strategies": [
+            "Stratified split",
+            "Time-based split when there is a time component",
+            "Grouped split by entity id"
+          ],
+          "common_metrics": [
+            "ROC-AUC",
+            "PR-AUC",
+            "F1",
+            "Recall at fixed precision"
+          ],
+          "leakage_warnings": [
+            "Do not use post-outcome activity windows as features",
+            "Do not leak the label via aggregates computed over the full period"
+          ],
+          "ideas_to_test": [
+            "Handle class imbalance via class weights or resampling",
+            "Tune gradient boosting capacity",
+            "Tune the decision threshold for the business metric"
+          ],
+          "ideas_to_ignore": [
+            "Deep learning on small tabular data (usually unnecessary)"
+          ],
+          "summary": "Curated offline prior-art for 'binary_classification'. Web search disabled \u2014 curated knowledge only. All ideas must be verified against the actual dataset."
+        },
+        "data_quality_report": {
+          "summary": "Scanned 1200 rows \u00d7 11 columns. 2 issue(s) found. Target: churned. 7 tabular feature(s) selected. 1 column(s) to drop.",
+          "original_csv_path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/sample_dataset.csv",
+          "cleaned_csv_path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/cleaned_sample_dataset.csv",
+          "n_rows_before": 1200,
+          "n_rows_after": 1200,
+          "n_cols_before": 11,
+          "n_cols_after": 10,
+          "target_column": "churned",
+          "task_type_hint": "binary_classification",
+          "image_columns": [],
+          "column_profiles": [
+            {
+              "name": "customer_id",
+              "dtype": "object",
+              "column_type": "id",
+              "role": "id",
+              "pct_missing": 0.0,
+              "n_unique": 1200,
+              "is_constant": false,
+              "description": "Identifier column \u2014 excluded from training features.",
+              "sample_values": [
+                "C100000",
+                "C100001",
+                "C100002"
+              ],
+              "include_in_modeling": false
+            },
+            {
+              "name": "timestamp",
+              "dtype": "object",
+              "column_type": "datetime",
+              "role": "time",
+              "pct_missing": 0.0,
+              "n_unique": 180,
+              "is_constant": false,
+              "description": "Datetime column \u2014 use for splitting, not as a raw feature.",
+              "sample_values": [
+                "2024-03-05",
+                "2024-01-08",
+                "2024-02-17"
+              ],
+              "include_in_modeling": false
+            },
+            {
+              "name": "platform",
+              "dtype": "object",
+              "column_type": "categorical",
+              "role": "train_feature",
+              "pct_missing": 0.0,
+              "n_unique": 3,
+              "is_constant": false,
+              "description": "Selected as a tabular modeling feature.",
+              "sample_values": [
+                "ios",
+                "android",
+                "web"
+              ],
+              "include_in_modeling": true
+            },
+            {
+              "name": "region",
+              "dtype": "object",
+              "column_type": "categorical",
+              "role": "drop",
+              "pct_missing": 0.4083,
+              "n_unique": 3,
+              "is_constant": false,
+              "description": "Missingness 40.8% exceeds 25% threshold \u2014 dropped.",
+              "sample_values": [
+                "EU",
+                "APAC",
+                "LATAM"
+              ],
+              "include_in_modeling": false
+            },
+            {
+              "name": "num_sessions_last_7d",
+              "dtype": "int64",
+              "column_type": "continuous",
+              "role": "train_feature",
+              "pct_missing": 0.0,
+              "n_unique": 10,
+              "is_constant": false,
+              "description": "Selected as a tabular modeling feature.",
+              "sample_values": [
+                5,
+                2,
+                3
+              ],
+              "include_in_modeling": true
+            },
+            {
+              "name": "num_sessions_last_30d",
+              "dtype": "int64",
+              "column_type": "continuous",
+              "role": "train_feature",
+              "pct_missing": 0.0,
+              "n_unique": 24,
+              "is_constant": false,
+              "description": "Selected as a tabular modeling feature.",
+              "sample_values": [
+                11,
+                13,
+                20
+              ],
+              "include_in_modeling": true
+            },
+            {
+              "name": "avg_session_duration",
+              "dtype": "float64",
+              "column_type": "continuous",
+              "role": "train_feature",
+              "pct_missing": 0.05,
+              "n_unique": 769,
+              "is_constant": false,
+              "description": "Selected as a tabular modeling feature.",
+              "sample_values": [
+                1.26,
+                6.36,
+                16.35
+              ],
+              "include_in_modeling": true
+            },
+            {
+              "name": "num_errors",
+              "dtype": "int64",
+              "column_type": "continuous",
+              "role": "train_feature",
+              "pct_missing": 0.0,
+              "n_unique": 7,
+              "is_constant": false,
+              "description": "Selected as a tabular modeling feature.",
+              "sample_values": [
+                0,
+                2,
+                1
+              ],
+              "include_in_modeling": true
+            },
+            {
+              "name": "subscription_tier",
+              "dtype": "object",
+              "column_type": "categorical",
+              "role": "train_feature",
+              "pct_missing": 0.0,
+              "n_unique": 3,
+              "is_constant": false,
+              "description": "Selected as a tabular modeling feature.",
+              "sample_values": [
+                "standard",
+                "premium",
+                "basic"
+              ],
+              "include_in_modeling": true
+            },
+            {
+              "name": "num_sessions_next_7d",
+              "dtype": "int64",
+              "column_type": "continuous",
+              "role": "train_feature",
+              "pct_missing": 0.0,
+              "n_unique": 11,
+              "is_constant": false,
+              "description": "Selected as a tabular modeling feature.",
+              "sample_values": [
+                4,
+                5,
+                0
+              ],
+              "include_in_modeling": true
+            },
+            {
+              "name": "churned",
+              "dtype": "int64",
+              "column_type": "binary",
+              "role": "target",
+              "pct_missing": 0.0,
+              "n_unique": 2,
+              "is_constant": false,
+              "description": "Prediction target for modeling.",
+              "sample_values": [
+                0,
+                1
+              ],
+              "include_in_modeling": false
+            }
+          ],
+          "bad_row_examples": [],
+          "modeling_features": [
+            "platform",
+            "num_sessions_last_7d",
+            "num_sessions_last_30d",
+            "avg_session_duration",
+            "num_errors",
+            "subscription_tier",
+            "num_sessions_next_7d"
+          ],
+          "excluded_columns": [
+            "customer_id",
+            "timestamp",
+            "region"
+          ],
+          "issues": [
+            {
+              "issue_type": "heavy_missingness",
+              "severity": "warning",
+              "column": "region",
+              "description": "Column 'region' is 40.8% missing (>25% threshold).",
+              "suggested_fix": "Drop before modeling."
+            },
+            {
+              "issue_type": "missing_values",
+              "severity": "info",
+              "column": "avg_session_duration",
+              "description": "Column 'avg_session_duration' has 5.0% missing values.",
+              "suggested_fix": "Impute during preprocessing (below drop threshold)."
+            }
+          ],
+          "remediation_plan": {
+            "column_renames": {},
+            "columns_to_drop": [
+              "region"
+            ],
+            "category_maps": {},
+            "drop_duplicate_rows": false,
+            "coerce_numeric_columns": [],
+            "strip_string_columns": true,
+            "modeling_features": [
+              "platform",
+              "num_sessions_last_7d",
+              "num_sessions_last_30d",
+              "avg_session_duration",
+              "num_errors",
+              "subscription_tier",
+              "num_sessions_next_7d"
+            ],
+            "feature_engineering_notes": []
+          },
+          "column_renames": [],
+          "actions_applied": [
+            "Dropped column 'region'.",
+            "Stripped whitespace on string columns."
+          ],
+          "feature_engineering_notes": [],
+          "quality_plotly_html": "data_quality_overview.html"
+        },
+        "cleaned_csv_path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/uploads/c9cd466c8fd3/cleaned_sample_dataset.csv",
+        "data_audit_report": {
+          "n_rows": 1200,
+          "n_cols": 10,
+          "columns": [
+            {
+              "name": "customer_id",
+              "dtype": "object",
+              "n_missing": 0,
+              "pct_missing": 0.0,
+              "n_unique": 1200,
+              "is_constant": false,
+              "is_near_constant": false,
+              "sample_values": [
+                "C100000",
+                "C100001",
+                "C100002",
+                "C100003",
+                "C100004"
+              ],
+              "mean": null,
+              "std": null,
+              "min": null,
+              "max": null,
+              "cardinality": 1200,
+              "inferred_role": "id"
+            },
+            {
+              "name": "timestamp",
+              "dtype": "object",
+              "n_missing": 0,
+              "pct_missing": 0.0,
+              "n_unique": 180,
+              "is_constant": false,
+              "is_near_constant": false,
+              "sample_values": [
+                "2024-03-05",
+                "2024-01-08",
+                "2024-02-17",
+                "2024-04-23",
+                "2024-06-28"
+              ],
+              "mean": null,
+              "std": null,
+              "min": null,
+              "max": null,
+              "cardinality": 180,
+              "inferred_role": "time"
+            },
+            {
+              "name": "platform",
+              "dtype": "object",
+              "n_missing": 0,
+              "pct_missing": 0.0,
+              "n_unique": 3,
+              "is_constant": false,
+              "is_near_constant": false,
+              "sample_values": [
+                "ios",
+                "android",
+                "web"
+              ],
+              "mean": null,
+              "std": null,
+              "min": null,
+              "max": null,
+              "cardinality": 3,
+              "inferred_role": "feature"
+            },
+            {
+              "name": "num_sessions_last_7d",
+              "dtype": "int64",
+              "n_missing": 0,
+              "pct_missing": 0.0,
+              "n_unique": 10,
+              "is_constant": false,
+              "is_near_constant": false,
+              "sample_values": [
+                5,
+                2,
+                3,
+                4,
+                7
+              ],
+              "mean": 3.5566666666666666,
+              "std": 1.6224413144202892,
+              "min": 1.0,
+              "max": 11.0,
+              "cardinality": null,
+              "inferred_role": "id"
+            },
+            {
+              "name": "num_sessions_last_30d",
+              "dtype": "int64",
+              "n_missing": 0,
+              "pct_missing": 0.0,
+              "n_unique": 24,
+              "is_constant": false,
+              "is_near_constant": false,
+              "sample_values": [
+                11,
+                13,
+                20,
+                9,
+                15
+              ],
+              "mean": 12.909166666666666,
+              "std": 3.324423629133899,
+              "min": 2.0,
+              "max": 26.0,
+              "cardinality": null,
+              "inferred_role": "id"
+            },
+            {
+              "name": "avg_session_duration",
+              "dtype": "float64",
+              "n_missing": 60,
+              "pct_missing": 0.05,
+              "n_unique": 769,
+              "is_constant": false,
+              "is_near_constant": false,
+              "sample_values": [
+                1.26,
+                6.36,
+                16.35,
+                4.12,
+                14.19
+              ],
+              "mean": 6.863543859649123,
+              "std": 4.176621341723427,
+              "min": 1.04,
+              "max": 31.89,
+              "cardinality": null,
+              "inferred_role": "id"
+            },
+            {
+              "name": "num_errors",
+              "dtype": "int64",
+              "n_missing": 0,
+              "pct_missing": 0.0,
+              "n_unique": 7,
+              "is_constant": false,
+              "is_near_constant": false,
+              "sample_values": [
+                0,
+                2,
+                1,
+                3,
+                4
+              ],
+              "mean": 1.195,
+              "std": 1.1163991023807274,
+              "min": 0.0,
+              "max": 6.0,
+              "cardinality": null,
+              "inferred_role": "feature"
+            },
+            {
+              "name": "subscription_tier",
+              "dtype": "object",
+              "n_missing": 0,
+              "pct_missing": 0.0,
+              "n_unique": 3,
+              "is_constant": false,
+              "is_near_constant": false,
+              "sample_values": [
+                "standard",
+                "premium",
+                "basic"
+              ],
+              "mean": null,
+              "std": null,
+              "min": null,
+              "max": null,
+              "cardinality": 3,
+              "inferred_role": "feature"
+            },
+            {
+              "name": "num_sessions_next_7d",
+              "dtype": "int64",
+              "n_missing": 0,
+              "pct_missing": 0.0,
+              "n_unique": 11,
+              "is_constant": false,
+              "is_near_constant": false,
+              "sample_values": [
+                4,
+                5,
+                0,
+                1,
+                2
+              ],
+              "mean": 2.8241666666666667,
+              "std": 2.4382104155673296,
+              "min": 0.0,
+              "max": 10.0,
+              "cardinality": null,
+              "inferred_role": "id"
+            },
+            {
+              "name": "churned",
+              "dtype": "int64",
+              "n_missing": 0,
+              "pct_missing": 0.0,
+              "n_unique": 2,
+              "is_constant": false,
+              "is_near_constant": false,
+              "sample_values": [
+                0,
+                1
+              ],
+              "mean": 0.3375,
+              "std": 0.4730541549631973,
+              "min": 0.0,
+              "max": 1.0,
+              "cardinality": null,
+              "inferred_role": "target"
+            }
+          ],
+          "n_duplicate_rows": 0,
+          "target": "churned",
+          "target_distribution": {
+            "kind": "categorical",
+            "n_classes": 2,
+            "imbalance_ratio": 1.963
+          },
+          "class_imbalance": 1.963,
+          "time_columns": [
+            "timestamp"
+          ],
+          "entity_columns": [
+            "avg_session_duration",
+            "customer_id",
+            "num_sessions_last_30d",
+            "num_sessions_last_7d",
+            "num_sessions_next_7d"
+          ],
+          "leakage_prone_columns": [
+            "num_sessions_next_7d"
+          ],
+          "near_empty_columns": [],
+          "constant_columns": [],
+          "high_cardinality_columns": [
+            "customer_id",
+            "timestamp"
+          ],
+          "description_vs_data_mismatches": [],
+          "notes": [
+            "Target appears imbalanced (ratio ~1.963)."
+          ]
+        },
+        "eda_plan": {
+          "checks": [
+            {
+              "name": "target_distribution",
+              "kind": "plot",
+              "rationale": "Understand target balance / spread to choose metrics and split.",
+              "columns": [
+                "churned"
+              ]
+            },
+            {
+              "name": "missingness",
+              "kind": "plot",
+              "rationale": "Quantify missing data to plan imputation.",
+              "columns": []
+            },
+            {
+              "name": "feature_distributions",
+              "kind": "plot",
+              "rationale": "Spot skew, outliers and scaling needs.",
+              "columns": [
+                "num_errors"
+              ]
+            },
+            {
+              "name": "feature_target",
+              "kind": "plot",
+              "rationale": "Assess which features separate/relate to the target.",
+              "columns": [
+                "num_errors"
+              ]
+            },
+            {
+              "name": "outliers",
+              "kind": "table",
+              "rationale": "Identify outliers that may need clipping/robust models.",
+              "columns": []
+            },
+            {
+              "name": "time_series",
+              "kind": "plot",
+              "rationale": "Inspect temporal trend/seasonality and confirm time-based split.",
+              "columns": [
+                "timestamp",
+                "churned"
+              ]
+            }
+          ],
+          "summary": "Planned 6 EDA checks tailored to a binary_classification task."
+        },
+        "eda_report": "# EDA Report\n\n- Task: **binary_classification**, target: **churned**\n- Shape: **1200 rows \u00d7 10 cols**\n- Class imbalance ratio: **1.963**\n\nEDA executed via the code runner (`code/eda.py`), status: **ok**.\n\n## Plots (6)\n- `correlation.png`\n- `feature_distributions.png`\n- `feature_target.png`\n- `missingness.png`\n- `target_distribution.png`\n- `time_series.png`\n\n## Tables (5)\n- `correlation.csv`\n- `missingness.csv`\n- `numeric_summary.csv`\n- `outliers.csv`\n- `target_distribution.csv`",
+        "eda_findings": {
+          "summary": "Reviewed EDA for binary_classification task. 4 table-derived insights. 6 plot(s) reviewed. Important columns: num_sessions_last_7d, num_sessions_last_30d, num_errors, num_sessions_next_7d. Plotly EDA conclusions:\n- **platform** (3 levels): top category 'android'.\n- **num_sessions_last_7d** (continuous): mean=3.557, std=1.622, missing=0.0%.\n- **num_sessions_last_30d** (continuous): mean=12.909, std=3.324, missing=0.0%.\n- **avg_session_duration** (continuous): mean=6.864, std=4.177, missing=5.0%.\n- **num_errors** (continuous): mean=1.195, std=1.116, missing=0.0%.\n- **subscription_tier** (3 levels): top category 'basic'.\n- **num_sessions_next_7d** (continuous): mean=2.824, std=2.438, missing=0.0%.",
+          "target_insights": [
+            "Class imbalance ratio ~1.963; consider class weights."
+          ],
+          "feature_insights": [
+            {
+              "feature": "num_sessions_last_7d",
+              "insight_type": "high_target_correlation",
+              "evidence": "corr(num_sessions_last_7d, churned) = -0.161",
+              "evidence_source": "correlation.csv",
+              "confidence": 0.6613173802792387,
+              "recommended_action": "keep",
+              "rationale": "Strong linear association with the target."
+            },
+            {
+              "feature": "num_sessions_last_30d",
+              "insight_type": "high_target_correlation",
+              "evidence": "corr(num_sessions_last_30d, churned) = -0.095",
+              "evidence_source": "correlation.csv",
+              "confidence": 0.5945130454909741,
+              "recommended_action": "keep",
+              "rationale": "Strong linear association with the target."
+            },
+            {
+              "feature": "num_errors",
+              "insight_type": "high_target_correlation",
+              "evidence": "corr(num_errors, churned) = 0.123",
+              "evidence_source": "correlation.csv",
+              "confidence": 0.6232208653027796,
+              "recommended_action": "keep",
+              "rationale": "Strong linear association with the target."
+            },
+            {
+              "feature": "num_sessions_next_7d",
+              "insight_type": "high_target_correlation",
+              "evidence": "corr(num_sessions_next_7d, churned) = -0.725",
+              "evidence_source": "correlation.csv",
+              "confidence": 0.95,
+              "recommended_action": "keep",
+              "rationale": "Strong linear association with the target."
+            }
+          ],
+          "important_columns": [
+            "num_sessions_last_7d",
+            "num_sessions_last_30d",
+            "num_errors",
+            "num_sessions_next_7d"
+          ],
+          "features_to_drop": [
+            "num_sessions_next_7d"
+          ],
+          "features_to_engineer": [],
+          "features_to_watch": [
+            "num_sessions_next_7d"
+          ],
+          "multicollinear_groups": [],
+          "preprocessing_implications": [
+            "Use stratified split and class-weighted models."
+          ],
+          "plot_reviews": [
+            {
+              "plot_name": "correlation.png",
+              "plot_type": "Numeric correlation heatmap",
+              "summary": "",
+              "key_observations": [],
+              "features_mentioned": [],
+              "reviewed_by": "skipped"
+            },
+            {
+              "plot_name": "feature_distributions.png",
+              "plot_type": "Numeric feature histograms (skew/outliers)",
+              "summary": "",
+              "key_observations": [],
+              "features_mentioned": [],
+              "reviewed_by": "skipped"
+            },
+            {
+              "plot_name": "feature_target.png",
+              "plot_type": "Feature vs target relationships (boxplots/scatter)",
+              "summary": "",
+              "key_observations": [],
+              "features_mentioned": [],
+              "reviewed_by": "skipped"
+            },
+            {
+              "plot_name": "missingness.png",
+              "plot_type": "Missing values fraction per column",
+              "summary": "",
+              "key_observations": [],
+              "features_mentioned": [],
+              "reviewed_by": "skipped"
+            },
+            {
+              "plot_name": "target_distribution.png",
+              "plot_type": "Target variable distribution (balance/spread)",
+              "summary": "",
+              "key_observations": [],
+              "features_mentioned": [],
+              "reviewed_by": "skipped"
+            },
+            {
+              "plot_name": "time_series.png",
+              "plot_type": "Target over time (trend/seasonality)",
+              "summary": "",
+              "key_observations": [],
+              "features_mentioned": [],
+              "reviewed_by": "skipped"
+            }
+          ],
+          "open_questions": [],
+          "analysis_sources": [
+            "correlation.csv",
+            "outliers.csv",
+            "missingness.csv",
+            "numeric_summary.csv",
+            "target_distribution.csv",
+            "plot_review"
+          ]
+        },
+        "eda_findings_report": {
+          "summary": "Reviewed EDA for binary_classification task. 4 table-derived insights. 6 plot(s) reviewed. Important columns: num_sessions_last_7d, num_sessions_last_30d, num_errors, num_sessions_next_7d. Plotly EDA conclusions:\n- **platform** (3 levels): top category 'android'.\n- **num_sessions_last_7d** (continuous): mean=3.557, std=1.622, missing=0.0%.\n- **num_sessions_last_30d** (continuous): mean=12.909, std=3.324, missing=0.0%.\n- **avg_session_duration** (continuous): mean=6.864, std=4.177, missing=5.0%.\n- **num_errors** (continuous): mean=1.195, std=1.116, missing=0.0%.\n- **subscription_tier** (3 levels): top category 'basic'.\n- **num_sessions_next_7d** (continuous): mean=2.824, std=2.438, missing=0.0%.",
+          "target_insights": [
+            "Class imbalance ratio ~1.963; consider class weights."
+          ],
+          "feature_insights": [
+            {
+              "feature": "num_sessions_last_7d",
+              "insight_type": "high_target_correlation",
+              "evidence": "corr(num_sessions_last_7d, churned) = -0.161",
+              "evidence_source": "correlation.csv",
+              "confidence": 0.6613173802792387,
+              "recommended_action": "keep",
+              "rationale": "Strong linear association with the target."
+            },
+            {
+              "feature": "num_sessions_last_30d",
+              "insight_type": "high_target_correlation",
+              "evidence": "corr(num_sessions_last_30d, churned) = -0.095",
+              "evidence_source": "correlation.csv",
+              "confidence": 0.5945130454909741,
+              "recommended_action": "keep",
+              "rationale": "Strong linear association with the target."
+            },
+            {
+              "feature": "num_errors",
+              "insight_type": "high_target_correlation",
+              "evidence": "corr(num_errors, churned) = 0.123",
+              "evidence_source": "correlation.csv",
+              "confidence": 0.6232208653027796,
+              "recommended_action": "keep",
+              "rationale": "Strong linear association with the target."
+            },
+            {
+              "feature": "num_sessions_next_7d",
+              "insight_type": "high_target_correlation",
+              "evidence": "corr(num_sessions_next_7d, churned) = -0.725",
+              "evidence_source": "correlation.csv",
+              "confidence": 0.95,
+              "recommended_action": "keep",
+              "rationale": "Strong linear association with the target."
+            }
+          ],
+          "important_columns": [
+            "num_sessions_last_7d",
+            "num_sessions_last_30d",
+            "num_errors",
+            "num_sessions_next_7d"
+          ],
+          "features_to_drop": [
+            "num_sessions_next_7d"
+          ],
+          "features_to_engineer": [],
+          "features_to_watch": [
+            "num_sessions_next_7d"
+          ],
+          "multicollinear_groups": [],
+          "preprocessing_implications": [
+            "Use stratified split and class-weighted models."
+          ],
+          "plot_reviews": [
+            {
+              "plot_name": "correlation.png",
+              "plot_type": "Numeric correlation heatmap",
+              "summary": "",
+              "key_observations": [],
+              "features_mentioned": [],
+              "reviewed_by": "skipped"
+            },
+            {
+              "plot_name": "feature_distributions.png",
+              "plot_type": "Numeric feature histograms (skew/outliers)",
+              "summary": "",
+              "key_observations": [],
+              "features_mentioned": [],
+              "reviewed_by": "skipped"
+            },
+            {
+              "plot_name": "feature_target.png",
+              "plot_type": "Feature vs target relationships (boxplots/scatter)",
+              "summary": "",
+              "key_observations": [],
+              "features_mentioned": [],
+              "reviewed_by": "skipped"
+            },
+            {
+              "plot_name": "missingness.png",
+              "plot_type": "Missing values fraction per column",
+              "summary": "",
+              "key_observations": [],
+              "features_mentioned": [],
+              "reviewed_by": "skipped"
+            },
+            {
+              "plot_name": "target_distribution.png",
+              "plot_type": "Target variable distribution (balance/spread)",
+              "summary": "",
+              "key_observations": [],
+              "features_mentioned": [],
+              "reviewed_by": "skipped"
+            },
+            {
+              "plot_name": "time_series.png",
+              "plot_type": "Target over time (trend/seasonality)",
+              "summary": "",
+              "key_observations": [],
+              "features_mentioned": [],
+              "reviewed_by": "skipped"
+            }
+          ],
+          "open_questions": [],
+          "analysis_sources": [
+            "correlation.csv",
+            "outliers.csv",
+            "missingness.csv",
+            "numeric_summary.csv",
+            "target_distribution.csv",
+            "plot_review"
+          ]
+        },
+        "eda_plotly_html": "eda_features.html",
+        "eda_plotly_conclusions": [
+          "**platform** (3 levels): top category 'android'.",
+          "**num_sessions_last_7d** (continuous): mean=3.557, std=1.622, missing=0.0%.",
+          "**num_sessions_last_30d** (continuous): mean=12.909, std=3.324, missing=0.0%.",
+          "**avg_session_duration** (continuous): mean=6.864, std=4.177, missing=5.0%.",
+          "**num_errors** (continuous): mean=1.195, std=1.116, missing=0.0%.",
+          "**subscription_tier** (3 levels): top category 'basic'.",
+          "**num_sessions_next_7d** (continuous): mean=2.824, std=2.438, missing=0.0%."
+        ],
+        "quality_plotly_html": "data_quality_overview.html",
+        "audit_plotly_html": "audit_missingness.html",
+        "modeling_features": [
+          "platform",
+          "num_sessions_last_7d",
+          "num_sessions_last_30d",
+          "avg_session_duration",
+          "num_errors",
+          "subscription_tier",
+          "num_sessions_next_7d"
+        ],
+        "excluded_columns": [
+          "customer_id",
+          "timestamp",
+          "region"
+        ],
+        "preprocessing_plan": {
+          "drop_columns": [
+            "customer_id",
+            "num_sessions_next_7d",
+            "timestamp"
+          ],
+          "keep_columns": [
+            "platform",
+            "num_sessions_last_7d",
+            "num_sessions_last_30d",
+            "avg_session_duration",
+            "num_errors",
+            "subscription_tier",
+            "num_sessions_next_7d"
+          ],
+          "feature_engineering": [
+            "Add lag/rolling features of the target where appropriate (y(t-1), rolling medians)."
+          ],
+          "numeric_columns": [
+            "num_sessions_last_7d",
+            "num_sessions_last_30d",
+            "avg_session_duration",
+            "num_errors"
+          ],
+          "categorical_columns": [
+            "platform",
+            "subscription_tier"
+          ],
+          "missing_value_strategy": {
+            "avg_session_duration": "median"
+          },
+          "encoding_strategy": "one_hot",
+          "scaling_strategy": "standard",
+          "aggregation": "",
+          "leakage_mitigations": [
+            "Fit imputers/encoders/scalers on the training split only.",
+            "Hold out the test set until final evaluation.",
+            "Dropped leakage-prone column 'num_sessions_next_7d'."
+          ],
+          "lag_features": [
+            "y_lag_1",
+            "y_rolling_median_5"
+          ],
+          "notes": [
+            "EDA review: Reviewed EDA for binary_classification task. 4 table-derived insights. 6 plot(s) reviewed. Important columns: num_sessions_last_7d, num_sessions_last_30d, num_errors, num_sessions_next_7d. Plotly EDA ",
+            "Watch columns: num_sessions_next_7d",
+            "Use stratified split and class-weighted models.",
+            "Keep columns aligned with Data Quality selection (7 features).",
+            "Leakage check: Kept column 'num_sessions_next_7d' matches a known leakage risk: Column 'num_sessions_next_7d' may encode information from after the prediction point."
+          ]
+        },
+        "split_report": {
+          "strategy": "time_based",
+          "train_rows": 720,
+          "valid_rows": 240,
+          "test_rows": 240,
+          "group_column": null,
+          "time_column": "timestamp",
+          "stratified": false,
+          "rationale": "Used 'time_based' split to respect the data structure and avoid leakage.",
+          "feature_count": 11
+        },
+        "split_plotly_html": "split_target_distribution.html",
+        "split_ratios": {
+          "Train": "720 (60%)",
+          "Validation": "240 (20%)",
+          "Test": "240 (20%)"
+        },
+        "baseline_results": {
+          "results": [
+            {
+              "model_name": "dummy",
+              "display_name": "Majority Class Baseline",
+              "family": "baseline",
+              "train_metrics": {
+                "accuracy": 0.6763888888888889,
+                "f1": 0.0,
+                "f1_macro": 0.40347970173985087,
+                "roc_auc": 0.5
+              },
+              "valid_metrics": {
+                "accuracy": 0.6458333333333334,
+                "f1": 0.0,
+                "f1_macro": 0.3924050632911392,
+                "roc_auc": 0.5
+              },
+              "primary_metric": "roc_auc",
+              "higher_is_better": true,
+              "valid_score": 0.5,
+              "train_valid_gap": 0.0,
+              "runtime_seconds": 0.001,
+              "notes": []
+            },
+            {
+              "model_name": "linear",
+              "display_name": "Logistic Regression",
+              "family": "linear",
+              "train_metrics": {
+                "accuracy": 0.9319444444444445,
+                "f1": 0.8989690721649485,
+                "f1_macro": 0.923830085820694,
+                "roc_auc": 0.9803650271875635
+              },
+              "valid_metrics": {
+                "accuracy": 0.9375,
+                "f1": 0.9122807017543859,
+                "f1_macro": 0.9318685062169988,
+                "roc_auc": 0.9781404174573055
+              },
+              "primary_metric": "roc_auc",
+              "higher_is_better": true,
+              "valid_score": 0.9781404174573055,
+              "train_valid_gap": 0.0022246097302579537,
+              "runtime_seconds": 0.016,
+              "notes": []
+            },
+            {
+              "model_name": "tree",
+              "display_name": "Decision Tree (max_depth=6)",
+              "family": "tree",
+              "train_metrics": {
+                "accuracy": 0.9666666666666667,
+                "f1": 0.9484978540772532,
+                "f1_macro": 0.9619285984965321,
+                "roc_auc": 0.9938618677900081
+              },
+              "valid_metrics": {
+                "accuracy": 0.9041666666666667,
+                "f1": 0.863905325443787,
+                "f1_macro": 0.8949751707604787,
+                "roc_auc": 0.9178747628083491
+              },
+              "primary_metric": "roc_auc",
+              "higher_is_better": true,
+              "valid_score": 0.9178747628083491,
+              "train_valid_gap": 0.07598710498165895,
+              "runtime_seconds": 0.163,
+              "notes": []
+            },
+            {
+              "model_name": "random_forest",
+              "display_name": "Random Forest",
+              "family": "ensemble",
+              "train_metrics": {
+                "accuracy": 1.0,
+                "f1": 1.0,
+                "f1_macro": 1.0,
+                "roc_auc": 1.0
+              },
+              "valid_metrics": {
+                "accuracy": 0.9333333333333333,
+                "f1": 0.9058823529411765,
+                "f1_macro": 0.9271347248576849,
+                "roc_auc": 0.9687666034155598
+              },
+              "primary_metric": "roc_auc",
+              "higher_is_better": true,
+              "valid_score": 0.9687666034155598,
+              "train_valid_gap": 0.031233396584440243,
+              "runtime_seconds": 0.794,
+              "notes": []
+            },
+            {
+              "model_name": "boosting",
+              "display_name": "XGBoost",
+              "family": "boosting",
+              "train_metrics": {
+                "accuracy": 1.0,
+                "f1": 1.0,
+                "f1_macro": 1.0,
+                "roc_auc": 1.0
+              },
+              "valid_metrics": {
+                "accuracy": 0.9125,
+                "f1": 0.8757396449704142,
+                "f1_macro": 0.9041077646073936,
+                "roc_auc": 0.9723719165085389
+              },
+              "primary_metric": "roc_auc",
+              "higher_is_better": true,
+              "valid_score": 0.9723719165085389,
+              "train_valid_gap": 0.027628083491461064,
+              "runtime_seconds": 1.397,
+              "notes": []
+            },
+            {
+              "model_name": "svm",
+              "display_name": "RBF SVM",
+              "family": "svm",
+              "train_metrics": {
+                "accuracy": 0.9347222222222222,
+                "f1": 0.9038854805725972,
+                "f1_macro": 0.927231909581777,
+                "roc_auc": 0.9841104775669555
+              },
+              "valid_metrics": {
+                "accuracy": 0.9375,
+                "f1": 0.9132947976878613,
+                "f1_macro": 0.9322174314172205,
+                "roc_auc": 0.9755597722960152
+              },
+              "primary_metric": "roc_auc",
+              "higher_is_better": true,
+              "valid_score": 0.9755597722960152,
+              "train_valid_gap": 0.008550705270940262,
+              "runtime_seconds": 0.049,
+              "notes": []
+            }
+          ]
+        },
+        "model_comparison": [
+          {
+            "model": "linear",
+            "display_name": "Logistic Regression",
+            "family": "linear",
+            "valid_score": 0.9781404174573055,
+            "train_valid_gap": 0.0022246097302579537,
+            "runtime_seconds": 0.016,
+            "primary_metric": "roc_auc"
+          },
+          {
+            "model": "svm",
+            "display_name": "RBF SVM",
+            "family": "svm",
+            "valid_score": 0.9755597722960152,
+            "train_valid_gap": 0.008550705270940262,
+            "runtime_seconds": 0.049,
+            "primary_metric": "roc_auc"
+          },
+          {
+            "model": "boosting",
+            "display_name": "XGBoost",
+            "family": "boosting",
+            "valid_score": 0.9723719165085389,
+            "train_valid_gap": 0.027628083491461064,
+            "runtime_seconds": 1.397,
+            "primary_metric": "roc_auc"
+          },
+          {
+            "model": "random_forest",
+            "display_name": "Random Forest",
+            "family": "ensemble",
+            "valid_score": 0.9687666034155598,
+            "train_valid_gap": 0.031233396584440243,
+            "runtime_seconds": 0.794,
+            "primary_metric": "roc_auc"
+          },
+          {
+            "model": "tree",
+            "display_name": "Decision Tree (max_depth=6)",
+            "family": "tree",
+            "valid_score": 0.9178747628083491,
+            "train_valid_gap": 0.07598710498165895,
+            "runtime_seconds": 0.163,
+            "primary_metric": "roc_auc"
+          },
+          {
+            "model": "dummy",
+            "display_name": "Majority Class Baseline",
+            "family": "baseline",
+            "valid_score": 0.5,
+            "train_valid_gap": 0.0,
+            "runtime_seconds": 0.001,
+            "primary_metric": "roc_auc"
+          }
+        ],
+        "first_conclusion": "# First Modeling Conclusion\n\n- **Task formulation**: binary_classification predicting `churned`. This matches the brief.\n- **Split strategy**: `time_based` \u2014 appropriate given the data structure and leakage considerations.\n- **Class imbalance** present (ratio ~1.963); consider class weights / threshold tuning.\n- **Best baseline**: `linear` with validation roc_auc = 0.9781.\n- **Dummy baseline** roc_auc = 0.5 (the model must beat this to be useful).\n- **Overfitting signs**: no strong signs.\n- **Underfitting signs**: no \u2014 models clearly beat the dummy.\n\n## What to change next\n- Improve the strongest families (boosting / random forest) via tuning.\n- Address class imbalance with class weights and/or threshold tuning.\n- Keep the test set untouched; iterate using validation only.",
+        "iteration_reports": [
+          {
+            "iteration": 1,
+            "hypothesis": "Balancing class weights will improve minority-class detection.",
+            "motivation": "EDA found class imbalance (ratio ~1.963).",
+            "change_description": "Trained random_forest with params {'class_weight': 'balanced'}.",
+            "model_name": "random_forest",
+            "valid_score": 0.9689184060721063,
+            "previous_best": 0.9781404174573055,
+            "relative_improvement": -0.0094,
+            "accepted": false,
+            "decision_reason": "Rejected: improvement -0.9% <= 5%.",
+            "train_valid_gap": 0.03108159392789367,
+            "metrics": {
+              "accuracy": 0.925,
+              "f1": 0.896551724137931,
+              "f1_macro": 0.918864097363083,
+              "roc_auc": 0.9689184060721063
+            }
+          }
+        ],
+        "iteration_summary": "# Iteration Summary\n\n## Iteration 1: random_forest\n- Hypothesis: Balancing class weights will improve minority-class detection.\n- Motivation: EDA found class imbalance (ratio ~1.963).\n- Validation roc_auc: 0.9689 (prev best 0.9781, rel. improvement -0.0094)\n- Decision: **REJECTED** \u2014 Rejected: improvement -0.9% <= 5%.\n\n**Stopped:** Validation improvement -0.9% <= 5% threshold.\n**Selected pipeline (by validation):** `linear` with roc_auc = 0.9781.",
+        "leakage_review": {
+          "fit_on_train_only": true,
+          "test_held_out": true,
+          "split_strategy": "time_based",
+          "findings": [
+            "Kept column 'num_sessions_next_7d' matches a known leakage risk: Column 'num_sessions_next_7d' may encode information from after the prediction point.",
+            "Audit flagged leakage-prone columns: num_sessions_next_7d \u2014 verify these are not computed from post-prediction information."
+          ],
+          "ok": false
+        },
+        "final_test_report": "# Final Test Evaluation\n\n- **Selected model (by validation)**: `linear`\n- **Primary metric**: roc_auc\n- **Validation roc_auc**: 0.9781\n- **Test roc_auc**: 0.985\n\n## Full test metrics\n- accuracy: 0.9375\n- f1: 0.9123\n- f1_macro: 0.9319\n- roc_auc: 0.985\n\n## Goal assessment\n- Project goal met: **YES**\n- Success criteria: Beat the dummy baseline and reach a usefully high roc_auc on held-out data.\n\n## Generalization\n- Validation and test roc_auc are close (0.9781 vs 0.985) \u2014 good generalisation.\n\n> The test set was used exactly once, after final model selection on validation.",
+        "final_test_report_obj": {
+          "final_model": "linear",
+          "test_metrics": {
+            "accuracy": 0.9375,
+            "f1": 0.912280701754386,
+            "f1_macro": 0.9318685062169989,
+            "roc_auc": 0.9850499586807904
+          },
+          "valid_metrics": {
+            "accuracy": 0.9375,
+            "f1": 0.9122807017543859,
+            "f1_macro": 0.9318685062169988,
+            "roc_auc": 0.9781404174573055
+          },
+          "goal_met": true,
+          "generalization_notes": [
+            "Validation and test roc_auc are close (0.9781 vs 0.985) \u2014 good generalisation."
+          ],
+          "limitations": [
+            "Single train/valid/test split (no cross-validation) for the MVP.",
+            "Curated offline prior-art only (web search disabled by default).",
+            "Limited hyperparameter search within the controlled iteration budget."
+          ],
+          "future_directions": [
+            "Add cross-validation and a proper hyperparameter search.",
+            "Engineer richer temporal/aggregation features and re-audit for leakage.",
+            "Calibrate probabilities and tune the decision threshold to the business cost.",
+            "Collect more data for minority classes / rare regimes."
+          ]
+        },
+        "notebook_path": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/notebooks/c9cd466c8fd3_final_notebook.ipynb",
+        "plots": [
+          "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/plots/correlation.png",
+          "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/plots/feature_distributions.png",
+          "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/plots/feature_target.png",
+          "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/plots/missingness.png",
+          "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/plots/target_distribution.png",
+          "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/plots/time_series.png"
+        ],
+        "plot_names": [
+          "correlation.png",
+          "feature_distributions.png",
+          "feature_target.png",
+          "missingness.png",
+          "target_distribution.png",
+          "time_series.png"
+        ],
+        "html_plots": [
+          "audit_missingness.html",
+          "data_quality_overview.html",
+          "eda_features.html",
+          "split_target_distribution.html"
+        ],
+        "tables": [
+          "correlation.csv",
+          "missingness.csv",
+          "model_comparison.csv",
+          "model_comparison_repro.csv",
+          "numeric_summary.csv",
+          "outliers.csv",
+          "split_sizes.csv",
+          "target_distribution.csv"
+        ],
+        "code_files": [
+          "eda.py",
+          "iteration_1.py",
+          "modeling.py",
+          "preprocessing.py"
+        ],
+        "working_context": "# Working Context (Agent Memory)\n\n_Shared, evolving project memory. Updated after each major phase. Contains decisions, evidence, assumptions, uncertainties and rejected alternatives \u2014 not hidden reasoning._\n\n## Problem framing\n- **Project goal:** - Build a model that predicts whether a customer will churn.\n- **ML task type:** binary_classification\n- **Target columns:** churned\n- **Primary metric:** roc_auc\n- **Split strategy:** time_based\n\n## Leakage risks\n- Column 'num_sessions_next_7d' may encode information from after the prediction point.\n- Brief explicitly warns about leakage from future activity windows.\n- column 'num_sessions_next_7d' may carry future/outcome info\n- Kept column 'num_sessions_next_7d' matches a known leakage risk: Column 'num_sessions_next_7d' may encode information from after the prediction point.\n- Audit flagged leakage-prone columns: num_sessions_next_7d \u2014 verify these are not computed from post-prediction information.\n\n## Data quality findings\n- [warning] Column 'region' is 40.8% missing (>25% threshold).\n- [info] Column 'avg_session_duration' has 5.0% missing values.\n- Target appears imbalanced (ratio ~1.963).\n- Leakage-prone columns: num_sessions_next_7d\n\n## Features\n**Important (EDA):** num_sessions_last_7d, num_sessions_last_30d, num_errors, num_sessions_next_7d\n\n**Selected:** num_sessions_last_7d, num_sessions_last_30d, num_errors, num_sessions_next_7d, platform, avg_session_duration, subscription_tier\n\n**Dropped:** num_sessions_next_7d, customer_id, timestamp\n\n## EDA findings\nReviewed EDA for binary_classification task. 4 table-derived insights. 6 plot(s) reviewed. Important columns: num_sessions_last_7d, num_sessions_last_30d, num_errors, num_sessions_next_7d.\n\n## Feature insights\n- num_sessions_last_7d: keep \u2014 corr(num_sessions_last_7d, churned) = -0.161\n- num_sessions_last_30d: keep \u2014 corr(num_sessions_last_30d, churned) = -0.095\n- num_errors: keep \u2014 corr(num_errors, churned) = 0.123\n- num_sessions_next_7d: keep \u2014 corr(num_sessions_next_7d, churned) = -0.725\n\n## Feature engineering ideas\n- _(none yet)_\n\n## Preprocessing decisions\n- Use stratified split and class-weighted models.\n- encoding=one_hot, scaling=standard\n- Fit imputers/encoders/scalers on the training split only.\n- Hold out the test set until final evaluation.\n- Dropped leakage-prone column 'num_sessions_next_7d'.\n\n## Model results so far\n- Logistic Regression: roc_auc=0.9781\n- RBF SVM: roc_auc=0.9756\n- XGBoost: roc_auc=0.9724\n- Random Forest: roc_auc=0.9688\n- Decision Tree (max_depth=6): roc_auc=0.9179\n- Majority Class Baseline: roc_auc=0.5\n- FINAL TEST linear: roc_auc=0.985\n\n**Best pipeline so far:** linear \u2014 final (test roc_auc=0.985)\n\n## Iteration history\n- iter 1 (random_forest): rejected \u2014 Rejected: improvement -0.9% <= 5%.\n\n## Rejected ideas\n- (prior-art suggests ignoring) Deep learning on small tabular data (usually unnecessary)\n- iter 1 random_forest: Balancing class weights will improve minority-class detection.\n\n## Open questions / uncertainties\n- Is there an explicit prediction time / cutoff for each row?\n- Are there business costs that should weight false positives vs negatives?\n- Which model family is most worth improving next?\n- Add cross-validation and a proper hyperparameter search.\n- Engineer richer temporal/aggregation features and re-audit for leakage.\n\n## Phase log\n- Project Understanding\n- Prior Art\n- Data Quality Review\n- Data Audit\n- EDA Planning\n- Executable EDA\n- EDA Review\n- Preprocessing\n- Baseline Modeling\n- First Conclusion\n- Iterative Improvement Loop\n- Leakage Review\n- Final Test Evaluation\n- Notebook Author\n",
+        "artifact_files": {
+          "baseline_results.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/baseline_results.json",
+          "code/eda.py": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/code/eda.py",
+          "code/iteration_1.py": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/code/iteration_1.py",
+          "code/modeling.py": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/code/modeling.py",
+          "code/preprocessing.py": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/code/preprocessing.py",
+          "data_audit.md": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/data_audit.md",
+          "data_audit_report.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/data_audit_report.json",
+          "data_quality.md": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/data_quality.md",
+          "data_quality_report.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/data_quality_report.json",
+          "eda_artifacts.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/eda_artifacts.json",
+          "eda_findings.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/eda_findings.json",
+          "eda_findings.md": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/eda_findings.md",
+          "eda_plan.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/eda_plan.json",
+          "eda_plan.md": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/eda_plan.md",
+          "eda_plotly_conclusions.md": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/eda_plotly_conclusions.md",
+          "eda_report.md": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/eda_report.md",
+          "final_test_report.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/final_test_report.json",
+          "final_test_report.md": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/final_test_report.md",
+          "first_conclusion.md": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/first_conclusion.md",
+          "iteration_1_report.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/iteration_1_report.json",
+          "iteration_report.md": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/iteration_report.md",
+          "iteration_result.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/iteration_result.json",
+          "iteration_summary.md": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/iteration_summary.md",
+          "leakage_flags.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/leakage_flags.json",
+          "leakage_review.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/leakage_review.json",
+          "leakage_review.md": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/leakage_review.md",
+          "model_comparison.csv": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/model_comparison.csv",
+          "model_results.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/model_results.json",
+          "modeling_report.md": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/modeling_report.md",
+          "notebook_spec.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/notebook_spec.json",
+          "plots/audit_missingness.html": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/plots/audit_missingness.html",
+          "plots/correlation.png": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/plots/correlation.png",
+          "plots/data_quality_overview.html": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/plots/data_quality_overview.html",
+          "plots/eda_features.html": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/plots/eda_features.html",
+          "plots/feature_distributions.png": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/plots/feature_distributions.png",
+          "plots/feature_target.png": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/plots/feature_target.png",
+          "plots/missingness.png": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/plots/missingness.png",
+          "plots/split_target_distribution.html": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/plots/split_target_distribution.html",
+          "plots/target_distribution.png": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/plots/target_distribution.png",
+          "plots/time_series.png": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/plots/time_series.png",
+          "prepared/feature_names.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/prepared/feature_names.json",
+          "prepared/fitted_meta.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/prepared/fitted_meta.json",
+          "prepared/frame.csv": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/prepared/frame.csv",
+          "prepared/meta.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/prepared/meta.json",
+          "prepared/models/best.joblib": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/prepared/models/best.joblib",
+          "prepared/models/boosting.joblib": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/prepared/models/boosting.joblib",
+          "prepared/models/dummy.joblib": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/prepared/models/dummy.joblib",
+          "prepared/models/linear.joblib": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/prepared/models/linear.joblib",
+          "prepared/models/random_forest.joblib": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/prepared/models/random_forest.joblib",
+          "prepared/models/svm.joblib": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/prepared/models/svm.joblib",
+          "prepared/models/tree.joblib": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/prepared/models/tree.joblib",
+          "prepared/preprocessor.joblib": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/prepared/preprocessor.joblib",
+          "prepared/split_idx.npz": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/prepared/split_idx.npz",
+          "prepared/split_meta.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/prepared/split_meta.json",
+          "prepared/splits.npz": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/prepared/splits.npz",
+          "preprocessing_decisions.md": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/preprocessing_decisions.md",
+          "preprocessing_plan.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/preprocessing_plan.json",
+          "prior_art.md": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/prior_art.md",
+          "prior_art_report.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/prior_art_report.json",
+          "project_spec.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/project_spec.json",
+          "project_understanding.md": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/project_understanding.md",
+          "reports/eda.log": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/reports/eda.log",
+          "reports/iteration_1.log": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/reports/iteration_1.log",
+          "reports/modeling.log": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/reports/modeling.log",
+          "reports/preprocessing.log": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/reports/preprocessing.log",
+          "split_ratios.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/split_ratios.json",
+          "split_report.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/split_report.json",
+          "tables/correlation.csv": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/tables/correlation.csv",
+          "tables/missingness.csv": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/tables/missingness.csv",
+          "tables/model_comparison.csv": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/tables/model_comparison.csv",
+          "tables/model_comparison_repro.csv": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/tables/model_comparison_repro.csv",
+          "tables/numeric_summary.csv": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/tables/numeric_summary.csv",
+          "tables/outliers.csv": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/tables/outliers.csv",
+          "tables/split_sizes.csv": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/tables/split_sizes.csv",
+          "tables/target_distribution.csv": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/tables/target_distribution.csv",
+          "working_context.json": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/working_context.json",
+          "working_context.md": "/Users/sharonhaimov/Documents/Cursor/Project2Notebook/backend/storage/artifacts/c9cd466c8fd3/working_context.md"
+        }
+      },
+      "summary": "Task: binary_classification on target 'churned'. Selected model: linear. Test roc_auc = 0.985. Goal met: yes.",
+      "errors": []
+    }
   }
 }

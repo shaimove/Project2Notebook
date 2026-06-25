@@ -9,6 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List
 
+from backend.agents.contracts import NodeContract
 from backend.agents.state import DataScientist
 from backend.config import settings
 from backend.mcp_client.client import MCPClient
@@ -18,6 +19,13 @@ from backend.services import artifact_store, memory
 
 PA = "prior-art-tools"
 PU = "project-understanding-tools"
+
+CONTRACT = NodeContract(
+    requires=("project_spec.json",),
+    requires_state=("project_spec",),
+    produces=("prior_art_report.json", "prior_art.md"),
+    produces_state=("prior_art_report",),
+)
 
 
 def run(state: DataScientist, client: MCPClient) -> DataScientist:

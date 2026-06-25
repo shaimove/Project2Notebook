@@ -10,11 +10,24 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List
 
+from backend.agents.contracts import NodeContract
 from backend.agents.state import DataScientist
 from backend.mcp_client.client import MCPClient
 from backend.services import artifact_store, memory
 
 NB = "notebook-tools"
+
+CONTRACT = NodeContract(
+    requires=(
+        "project_spec.json",
+        "data_audit_report.json",
+        "final_test_report.json",
+        "model_results.json",
+    ),
+    requires_state=("project_id", "model_comparison", "final_test_report_obj"),
+    produces_state=("notebook_path",),
+)
+
 
 _FAMILY_IMPORT = {
     "dummy": ("from sklearn.dummy import DummyClassifier, DummyRegressor", "DummyClassifier(strategy='most_frequent')", "DummyRegressor()"),

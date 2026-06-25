@@ -27,6 +27,7 @@ from mcp_servers import (
     prior_art_server,
     preprocessing_server,
     project_understanding_server,
+    viz_server,
 )
 from mcp_servers.common import MCPServer
 
@@ -47,6 +48,7 @@ class InProcessRegistry:
             experiment_server.server,
             notebook_server.server,
             codegen_server.server,
+            viz_server.server,
         ]
         self._servers: Dict[str, MCPServer] = {s.name: s for s in servers}
 

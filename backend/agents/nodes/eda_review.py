@@ -9,17 +9,25 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
+from backend.agents.contracts import NodeContract
 from backend.agents.state import DataScientist
 from backend.mcp_client.client import MCPClient
 from backend.schemas.eda_findings import EDAFindingsReport
 from backend.schemas.validation import validate_model
 from backend.services import artifact_store, memory
 from backend.services.llm import llm
-from backend.services.plotly_viz import generate_eda_plotly
 
 logger = logging.getLogger(__name__)
 
 ER = "eda-review-tools"
+VIZ = "viz-tools"
+
+CONTRACT = NodeContract(
+    requires=("eda_artifacts.json", "data_audit_report.json"),
+    requires_state=("project_id", "csv_paths", "eda_artifacts", "data_audit_report"),
+    produces=("eda_findings.json", "eda_findings.md"),
+    produces_state=("eda_findings", "eda_findings_report"),
+)
 
 
 def run(state: DataScientist, client: MCPClient) -> DataScientist:
@@ -36,13 +44,13 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
         for p in (eda_artifacts.get("plots") or [])
     ]
 
-    plotly_result = generate_eda_plotly(
-        project_id,
-        csv_path,
-        features,
-        target,
-        spec.get("ml_task_type", ""),
-    )
+    plotly_result = client.call_tool(VIZ, "generate_eda_plotly_html", {
+        "project_id": project_id,
+        "csv_path": csv_path,
+        "features": features,
+        "target": target,
+        "task_type": spec.get("ml_task_type", ""),
+    })
     if plotly_result.get("ok"):
         state["eda_plotly_html"] = plotly_result.get("html_name")
         state["eda_plotly_conclusions"] = plotly_result.get("conclusions") or []

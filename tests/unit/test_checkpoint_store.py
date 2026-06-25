@@ -36,12 +36,21 @@ def test_run_graph_persists_checkpoints(isolated_storage, tmp_path, monkeypatch)
         lambda: CheckpointStore(tmp_path / "cp.db"),
     )
 
+    from backend.agents.contracts import NodeContract
+    from backend.agents.graph import WorkflowStep
+
     def ok(state, _client):
         state["marker"] = True
         return state
 
     original = graph_module.WORKFLOW
-    graph_module.WORKFLOW = [("Ok Step", ok)]
+    graph_module.WORKFLOW = [
+        WorkflowStep(
+            "Ok Step",
+            ok,
+            NodeContract(requires_state=("project_id",), produces_state=("marker",)),
+        )
+    ]
     try:
         state = new_state("cp-graph", "", [], [])
         result = run_graph(state)

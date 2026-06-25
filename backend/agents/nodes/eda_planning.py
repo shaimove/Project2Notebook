@@ -7,10 +7,18 @@ from __future__ import annotations
 
 from typing import List
 
+from backend.agents.contracts import NodeContract
 from backend.agents.state import DataScientist
 from backend.mcp_client.client import MCPClient
 from backend.schemas.data_audit import EDACheck, EDAPlan
 from backend.services import artifact_store, memory
+
+CONTRACT = NodeContract(
+    requires=("project_spec.json", "data_audit_report.json"),
+    requires_state=("project_spec", "data_audit_report"),
+    produces=("eda_plan.json", "eda_plan.md"),
+    produces_state=("eda_plan",),
+)
 
 
 def run(state: DataScientist, client: MCPClient) -> DataScientist:

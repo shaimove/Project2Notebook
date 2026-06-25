@@ -34,6 +34,8 @@ class DataScientist(TypedDict, total=False):
     eda_findings_report: Optional[Dict[str, Any]]
     eda_plotly_html: Optional[str]
     eda_plotly_conclusions: Optional[List[str]]
+    quality_plotly_html: Optional[str]
+    audit_plotly_html: Optional[str]
     split_plotly_html: Optional[str]
     split_ratios: Optional[Dict[str, Any]]
     modeling_features: List[str]
@@ -96,6 +98,8 @@ def new_state(
         eda_findings_report=None,
         eda_plotly_html=None,
         eda_plotly_conclusions=None,
+        quality_plotly_html=None,
+        audit_plotly_html=None,
         split_plotly_html=None,
         split_ratios=None,
         modeling_features=[],

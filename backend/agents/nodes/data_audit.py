@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
+from backend.agents.contracts import NodeContract
 from backend.agents.state import DataScientist
 from backend.mcp_client.client import MCPClient
 from backend.schemas.data_audit import ColumnProfile, DataAuditReport, TargetDistribution
@@ -14,6 +15,14 @@ from backend.schemas.validation import parse_models, validate_model
 from backend.services import artifact_store, memory
 
 DI = "data-inspection-tools"
+VIZ = "viz-tools"
+
+CONTRACT = NodeContract(
+    requires=("project_spec.json",),
+    requires_state=("project_id", "csv_paths", "project_spec"),
+    produces=("data_audit_report.json", "data_audit.md"),
+    produces_state=("data_audit_report",),
+)
 
 
 def run(state: DataScientist, client: MCPClient) -> DataScientist:
@@ -84,6 +93,13 @@ def run(state: DataScientist, client: MCPClient) -> DataScientist:
     artifact_store.write_json(pid, "data_audit_report.json", d)
     artifact_store.write_text(pid, "data_audit.md", _render_md(d))
     state["data_audit_report"] = d
+
+    audit_viz = client.call_tool(VIZ, "generate_audit_missingness_plotly_html", {
+        "project_id": pid,
+        "audit": d,
+    })
+    if audit_viz.get("ok"):
+        state["audit_plotly_html"] = audit_viz.get("html_name")
 
     findings = list(d.get("notes", []))
     if d.get("leakage_prone_columns"):
